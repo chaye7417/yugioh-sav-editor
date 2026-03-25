@@ -6,7 +6,7 @@
 
 import { defineStore } from "pinia";
 import type { SaveData, CrgyRecipe, ActiveDeck } from "@/core/sav";
-import { parseSav, writeSav, setCardCount, setAllCards, readTrunk, getTrunkStats } from "@/core/sav";
+import { parseSav, writeSav, setCardCount, getCardCount, setAllCards, readTrunk, getTrunkStats } from "@/core/sav";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
 
 /** 当前激活的面板 */
@@ -121,7 +121,14 @@ export const useSavStore = defineStore("sav", {
 		 */
 		updateRecipe(slot: number, recipe: CrgyRecipe): void {
 			if (!this.saveData) return;
-			this.saveData.recipes[slot] = recipe;
+			this.ensureCardsInCollection([
+				...recipe.mainCids,
+				...recipe.sideCids,
+				...recipe.extraCids,
+			]);
+			const newRecipes = [...this.saveData.recipes];
+			newRecipes[slot] = recipe;
+			this.saveData = { ...this.saveData, recipes: newRecipes };
 			this.isModified = true;
 		},
 
@@ -132,12 +139,14 @@ export const useSavStore = defineStore("sav", {
 		 */
 		clearRecipe(slot: number): void {
 			if (!this.saveData) return;
-			this.saveData.recipes[slot] = {
+			const newRecipes = [...this.saveData.recipes];
+			newRecipes[slot] = {
 				name: "",
 				mainCids: [],
 				sideCids: [],
 				extraCids: [],
 			};
+			this.saveData = { ...this.saveData, recipes: newRecipes };
 			this.isModified = true;
 		},
 
@@ -148,7 +157,12 @@ export const useSavStore = defineStore("sav", {
 		 */
 		updateActiveDeck(deck: ActiveDeck): void {
 			if (!this.saveData) return;
-			this.saveData.activeDeck = deck;
+			this.ensureCardsInCollection([
+				...deck.mainCids,
+				...deck.sideCids,
+				...deck.extraCids,
+			]);
+			this.saveData = { ...this.saveData, activeDeck: deck };
 			this.isModified = true;
 		},
 
@@ -187,8 +201,41 @@ export const useSavStore = defineStore("sav", {
 		 */
 		updateDp(value: number): void {
 			if (!this.saveData) return;
-			this.saveData.dp = Math.max(0, Math.min(0xFFFFFFFF, Math.floor(value)));
+			const dp = Math.max(0, Math.min(0xFFFFFFFF, Math.floor(value)));
+			this.saveData = { ...this.saveData, dp };
 			this.isModified = true;
+		},
+
+		/**
+		 * 确保卡组中用到的卡在收藏中数量足够。
+		 * 统计卡组中每张卡需要的数量，如果收藏中不够则自动注入。
+		 *
+		 * @param cids - 卡组中所有 CID 列表（可重复）
+		 */
+		ensureCardsInCollection(cids: number[]): void {
+			if (!this.saveData) return;
+
+			// 统计每张卡需要的数量
+			const needed = new Map<number, number>();
+			for (const cid of cids) {
+				if (cid === 0) continue;
+				needed.set(cid, (needed.get(cid) ?? 0) + 1);
+			}
+
+			let changed = false;
+			for (const [cid, requiredCount] of needed) {
+				const card = cardDatabase.getByCid(String(cid));
+				if (!card) continue;
+				const currentCount = getCardCount(this.saveData.gamedata, card.nibbleIndex);
+				if (currentCount < requiredCount) {
+					setCardCount(this.saveData.gamedata, card.nibbleIndex, requiredCount);
+					changed = true;
+				}
+			}
+
+			if (changed) {
+				this.gamedataVersion++;
+			}
 		},
 
 		/**

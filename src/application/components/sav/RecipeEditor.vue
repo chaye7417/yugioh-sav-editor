@@ -65,10 +65,18 @@
 					</select>
 				</div>
 
-				<div class="recipe-editor__search-results">
+				<draggable
+					class="recipe-editor__search-results"
+					:list="searchResultItems"
+					:group="{ name: 'recipe-cards', pull: 'clone', put: false }"
+					:sort="false"
+					:clone="cloneSearchItem"
+					@start="onDragStart"
+					@end="onDragEnd"
+				>
 					<div
-						v-for="item in searchResults"
-						:key="item.cid"
+						v-for="item in searchResultItems"
+						:key="item.key"
 						class="recipe-editor__card-item"
 						:title="buildTooltip(item.card)"
 						@click="addCard(item.cid, item.card)"
@@ -83,13 +91,16 @@
 							{{ item.card.name }}
 						</span>
 					</div>
-					<p
-						v-if="searchResults.length === 0 && searchKeyword"
-						class="recipe-editor__no-results"
-					>
-						没有找到匹配的卡片
-					</p>
-				</div>
+				</draggable>
+				<p class="recipe-editor__hint">
+					点击添加 | 可拖拽到任意卡组区域
+				</p>
+				<p
+					v-if="searchResultItems.length === 0 && searchKeyword"
+					class="recipe-editor__no-results"
+				>
+					没有找到匹配的卡片
+				</p>
 			</div>
 
 			<!-- 右侧：卡组编辑区 -->
@@ -97,87 +108,111 @@
 				<!-- 主卡组 -->
 				<div class="recipe-editor__deck-section">
 					<h4 class="recipe-editor__deck-section-title recipe-editor__deck-section-title--main">
-						主卡组 {{ mainCards.length }}/60
+						主卡组 {{ mainDeckItems.length }}/60
 					</h4>
-					<div class="recipe-editor__card-grid">
+					<draggable
+						class="recipe-editor__card-grid"
+						:class="{ 'recipe-editor__card-grid--drag-over': isDragging }"
+						:list="mainDeckItems"
+						group="recipe-cards"
+						@change="onMainChange"
+						@start="onDragStart"
+						@end="onDragEnd"
+					>
 						<div
-							v-for="(card, index) in mainCards"
-							:key="'main-' + index"
+							v-for="item in mainDeckItems"
+							:key="item.key"
 							class="recipe-editor__deck-card"
-							:title="buildTooltip(card)"
-							@click="removeFromMain(index)"
+							:title="buildTooltip(item.card)"
+							@click="removeFromMain(item.index)"
 						>
 							<img
-								:src="getCardImageUrl(card.passcode)"
-								:alt="card.name"
+								:src="getCardImageUrl(item.card.passcode)"
+								:alt="item.card.name"
 								class="recipe-editor__card-img recipe-editor__card-img--medium"
 								loading="lazy"
 							/>
 						</div>
-						<div
-							v-if="mainCards.length === 0"
-							class="recipe-editor__empty-hint"
-						>
-							点击左侧卡片添加到主卡组
-						</div>
+					</draggable>
+					<div
+						v-if="mainDeckItems.length === 0 && !isDragging"
+						class="recipe-editor__empty-hint"
+					>
+						点击左侧卡片添加到主卡组
 					</div>
 				</div>
 
 				<!-- 额外卡组 -->
 				<div class="recipe-editor__deck-section">
 					<h4 class="recipe-editor__deck-section-title recipe-editor__deck-section-title--extra">
-						额外卡组 {{ extraCards.length }}/15
+						额外卡组 {{ extraDeckItems.length }}/15
 					</h4>
-					<div class="recipe-editor__card-grid">
+					<draggable
+						class="recipe-editor__card-grid"
+						:class="{ 'recipe-editor__card-grid--drag-over': isDragging }"
+						:list="extraDeckItems"
+						group="recipe-cards"
+						@change="onExtraChange"
+						@start="onDragStart"
+						@end="onDragEnd"
+					>
 						<div
-							v-for="(card, index) in extraCards"
-							:key="'extra-' + index"
+							v-for="item in extraDeckItems"
+							:key="item.key"
 							class="recipe-editor__deck-card"
-							:title="buildTooltip(card)"
-							@click="removeFromExtra(index)"
+							:title="buildTooltip(item.card)"
+							@click="removeFromExtra(item.index)"
 						>
 							<img
-								:src="getCardImageUrl(card.passcode)"
-								:alt="card.name"
+								:src="getCardImageUrl(item.card.passcode)"
+								:alt="item.card.name"
 								class="recipe-editor__card-img recipe-editor__card-img--medium"
 								loading="lazy"
 							/>
 						</div>
-						<div
-							v-if="extraCards.length === 0"
-							class="recipe-editor__empty-hint"
-						>
-							融合/同调怪兽会被添加到此处
-						</div>
+					</draggable>
+					<div
+						v-if="extraDeckItems.length === 0 && !isDragging"
+						class="recipe-editor__empty-hint"
+					>
+						融合/同调怪兽会被添加到此处
 					</div>
 				</div>
 
 				<!-- 副卡组 -->
 				<div class="recipe-editor__deck-section">
 					<h4 class="recipe-editor__deck-section-title recipe-editor__deck-section-title--side">
-						副卡组 {{ sideCards.length }}/15
+						副卡组 {{ sideDeckItems.length }}/15
 					</h4>
-					<div class="recipe-editor__card-grid">
+					<draggable
+						class="recipe-editor__card-grid"
+						:class="{ 'recipe-editor__card-grid--drag-over': isDragging }"
+						:list="sideDeckItems"
+						group="recipe-cards"
+						@change="onSideChange"
+						@start="onDragStart"
+						@end="onDragEnd"
+					>
 						<div
-							v-for="(card, index) in sideCards"
-							:key="'side-' + index"
+							v-for="item in sideDeckItems"
+							:key="item.key"
 							class="recipe-editor__deck-card"
-							:title="buildTooltip(card)"
-							@click="removeFromSide(index)"
+							:title="buildTooltip(item.card)"
+							@click="removeFromSide(item.index)"
 						>
 							<img
-								:src="getCardImageUrl(card.passcode)"
-								:alt="card.name"
+								:src="getCardImageUrl(item.card.passcode)"
+								:alt="item.card.name"
 								class="recipe-editor__card-img recipe-editor__card-img--medium"
 								loading="lazy"
 							/>
 						</div>
-						<div
-							v-if="sideCards.length === 0"
-							class="recipe-editor__empty-hint"
-						>
-							点击左侧卡片添加到副卡组（按住 Shift）
-						</div>
+					</draggable>
+					<div
+						v-if="sideDeckItems.length === 0 && !isDragging"
+						class="recipe-editor__empty-hint"
+					>
+						拖拽卡片到此处添加副卡组
 					</div>
 				</div>
 			</div>
@@ -187,6 +222,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from "vue";
+import draggable from "vuedraggable";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
 import {
@@ -202,13 +238,21 @@ const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
 /** 额外卡组类型标记 (融合 | 同调 | 超量 | 连接) */
 const EXTRA_DECK_TYPE_MASK = 0x40 | 0x2000 | 0x800000 | 0x4000000;
 
-interface SearchResultItem {
-	cid: string;
+interface DeckCardItem {
+	cid: number;
 	card: CardEntry;
+	key: string;
+	index: number;
+}
+
+let uidCounter = 0;
+function nextUid(): string {
+	return `dci-${++uidCounter}`;
 }
 
 export default defineComponent({
 	name: "RecipeEditor",
+	components: { draggable },
 	setup() {
 		const savStore = useSavStore();
 
@@ -217,6 +261,7 @@ export default defineComponent({
 		const filterAttribute = ref(0);
 		const filterLevel = ref(0);
 		const deckName = ref("");
+		const isDragging = ref(false);
 
 		// 当槽位切换时同步卡组名
 		watch(
@@ -229,7 +274,7 @@ export default defineComponent({
 		);
 
 		// 搜索结果
-		const searchResults = computed<SearchResultItem[]>(() => {
+		const searchResultItems = computed<DeckCardItem[]>(() => {
 			const keyword = searchKeyword.value.trim();
 			let entries: [string, CardEntry][];
 
@@ -257,35 +302,47 @@ export default defineComponent({
 					return true;
 				})
 				.slice(0, 80)
-				.map(([cid, card]) => ({ cid, card }));
+				.map(([cid, card]) => ({
+					cid: Number(cid),
+					card,
+					key: `search-${cid}`,
+					index: -1,
+				}));
 		});
 
-		// 将 CID 列表转为 CardEntry 列表
-		function cidsToCards(cids: number[]): CardEntry[] {
-			const result: CardEntry[] = [];
-			for (const cid of cids) {
-				const card = cardDatabase.getByCid(String(cid));
-				if (card) result.push(card);
+		/** 将 CID 数组转成 DeckCardItem 数组 */
+		function cidsToDeckItems(cids: number[], prefix: string): DeckCardItem[] {
+			const result: DeckCardItem[] = [];
+			for (let i = 0; i < cids.length; i++) {
+				const card = cardDatabase.getByCid(String(cids[i]));
+				if (card) {
+					result.push({
+						cid: cids[i],
+						card,
+						key: `${prefix}-${i}-${cids[i]}`,
+						index: i,
+					});
+				}
 			}
 			return result;
 		}
 
-		const mainCards = computed(() => {
+		const mainDeckItems = computed(() => {
 			const recipe = savStore.activeRecipe;
 			if (!recipe) return [];
-			return cidsToCards(recipe.mainCids);
+			return cidsToDeckItems(recipe.mainCids, "main");
 		});
 
-		const extraCards = computed(() => {
+		const extraDeckItems = computed(() => {
 			const recipe = savStore.activeRecipe;
 			if (!recipe) return [];
-			return cidsToCards(recipe.extraCids);
+			return cidsToDeckItems(recipe.extraCids, "extra");
 		});
 
-		const sideCards = computed(() => {
+		const sideDeckItems = computed(() => {
 			const recipe = savStore.activeRecipe;
 			if (!recipe) return [];
-			return cidsToCards(recipe.sideCids);
+			return cidsToDeckItems(recipe.sideCids, "side");
 		});
 
 		function getCardImageUrl(passcode: string): string {
@@ -324,10 +381,130 @@ export default defineComponent({
 			return (card.type & EXTRA_DECK_TYPE_MASK) !== 0;
 		}
 
-		function addCard(cidStr: string, card: CardEntry): void {
+		/** 克隆搜索结果项（拖拽 clone 模式需要） */
+		function cloneSearchItem(item: DeckCardItem): DeckCardItem {
+			return { ...item, key: nextUid() };
+		}
+
+		/** 从 DeckCardItem 数组提取 CID 数组 */
+		function itemsToCids(items: DeckCardItem[]): number[] {
+			return items.map((it) => it.cid);
+		}
+
+		function syncToStore(
+			mainItems: DeckCardItem[],
+			extraItems: DeckCardItem[],
+			sideItems: DeckCardItem[]
+		): void {
 			const recipe = savStore.activeRecipe;
 			if (!recipe) return;
-			const cid = Number(cidStr);
+			savStore.updateRecipe(savStore.activeRecipeSlot, {
+				...recipe,
+				mainCids: itemsToCids(mainItems).slice(0, 60),
+				extraCids: itemsToCids(extraItems).slice(0, 15),
+				sideCids: itemsToCids(sideItems).slice(0, 15),
+			});
+		}
+
+		/** 处理主卡组 draggable 变化 */
+		function onMainChange(evt: any): void {
+			const recipe = savStore.activeRecipe;
+			if (!recipe) return;
+
+			if (evt.added) {
+				const item: DeckCardItem = evt.added.element;
+				const newMain = [...recipe.mainCids];
+				if (newMain.length >= 60) return;
+				newMain.splice(evt.added.newIndex, 0, item.cid);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					mainCids: newMain,
+				});
+			} else if (evt.removed) {
+				const newMain = [...recipe.mainCids];
+				newMain.splice(evt.removed.oldIndex, 1);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					mainCids: newMain,
+				});
+			} else if (evt.moved) {
+				const newMain = [...recipe.mainCids];
+				const [moved] = newMain.splice(evt.moved.oldIndex, 1);
+				newMain.splice(evt.moved.newIndex, 0, moved);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					mainCids: newMain,
+				});
+			}
+		}
+
+		/** 处理额外卡组 draggable 变化 */
+		function onExtraChange(evt: any): void {
+			const recipe = savStore.activeRecipe;
+			if (!recipe) return;
+
+			if (evt.added) {
+				const item: DeckCardItem = evt.added.element;
+				const newExtra = [...recipe.extraCids];
+				if (newExtra.length >= 15) return;
+				newExtra.splice(evt.added.newIndex, 0, item.cid);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					extraCids: newExtra,
+				});
+			} else if (evt.removed) {
+				const newExtra = [...recipe.extraCids];
+				newExtra.splice(evt.removed.oldIndex, 1);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					extraCids: newExtra,
+				});
+			} else if (evt.moved) {
+				const newExtra = [...recipe.extraCids];
+				const [moved] = newExtra.splice(evt.moved.oldIndex, 1);
+				newExtra.splice(evt.moved.newIndex, 0, moved);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					extraCids: newExtra,
+				});
+			}
+		}
+
+		/** 处理副卡组 draggable 变化 */
+		function onSideChange(evt: any): void {
+			const recipe = savStore.activeRecipe;
+			if (!recipe) return;
+
+			if (evt.added) {
+				const item: DeckCardItem = evt.added.element;
+				const newSide = [...recipe.sideCids];
+				if (newSide.length >= 15) return;
+				newSide.splice(evt.added.newIndex, 0, item.cid);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					sideCids: newSide,
+				});
+			} else if (evt.removed) {
+				const newSide = [...recipe.sideCids];
+				newSide.splice(evt.removed.oldIndex, 1);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					sideCids: newSide,
+				});
+			} else if (evt.moved) {
+				const newSide = [...recipe.sideCids];
+				const [moved] = newSide.splice(evt.moved.oldIndex, 1);
+				newSide.splice(evt.moved.newIndex, 0, moved);
+				savStore.updateRecipe(savStore.activeRecipeSlot, {
+					...recipe,
+					sideCids: newSide,
+				});
+			}
+		}
+
+		function addCard(cid: number, card: CardEntry): void {
+			const recipe = savStore.activeRecipe;
+			if (!recipe) return;
 
 			if (isExtraDeckCard(card)) {
 				if (recipe.extraCids.length >= 15) return;
@@ -390,6 +567,14 @@ export default defineComponent({
 			// searchResults 是 computed，会自动更新
 		}
 
+		function onDragStart(): void {
+			isDragging.value = true;
+		}
+
+		function onDragEnd(): void {
+			isDragging.value = false;
+		}
+
 		function exportYdk(): void {
 			const recipe = savStore.activeRecipe;
 			if (!recipe) return;
@@ -439,18 +624,25 @@ export default defineComponent({
 			filterAttribute,
 			filterLevel,
 			deckName,
-			searchResults,
-			mainCards,
-			extraCards,
-			sideCards,
+			isDragging,
+			searchResultItems,
+			mainDeckItems,
+			extraDeckItems,
+			sideDeckItems,
 			getCardImageUrl,
 			buildTooltip,
+			cloneSearchItem,
 			addCard,
 			removeFromMain,
 			removeFromExtra,
 			removeFromSide,
+			onMainChange,
+			onExtraChange,
+			onSideChange,
 			onNameChange,
 			onSearch,
+			onDragStart,
+			onDragEnd,
 			exportYdk,
 		};
 	},
@@ -577,6 +769,15 @@ export default defineComponent({
 		}
 	}
 
+	&__hint {
+		color: #aaa;
+		font-size: 0.75rem;
+		text-align: center;
+		width: 100%;
+		margin: 0.25rem 0;
+		padding: 0;
+	}
+
 	&__no-results {
 		color: #999;
 		font-size: 0.85rem;
@@ -624,6 +825,13 @@ export default defineComponent({
 		padding: 4px;
 		background: #f5f5f5;
 		border-radius: 4px;
+		transition: box-shadow 0.2s, border-color 0.2s;
+		border: 2px solid transparent;
+
+		&--drag-over {
+			border-color: #409eff;
+			box-shadow: inset 0 0 8px rgba(64, 158, 255, 0.2);
+		}
 	}
 
 	&__deck-card {
@@ -646,5 +854,10 @@ export default defineComponent({
 		text-align: center;
 		width: 100%;
 	}
+}
+
+// vuedraggable 拖拽中的 ghost 样式
+.sortable-ghost {
+	opacity: 0.5;
 }
 </style>
