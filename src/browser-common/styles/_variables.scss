@@ -1,0 +1,105 @@
+@use "sass:color";
+
+// Color system
+
+$white: #fff;
+$gray-100: #f8f8f8;
+$gray-200: #e9e9e9;
+$gray-300: #dedede;
+$gray-400: #cecece;
+$gray-500: #adadad;
+$gray-600: #6c6c6c;
+$gray-700: #494949;
+$gray-800: #343434;
+$gray-900: #212121;
+$black: #000;
+
+$grays: (
+	"100": $gray-100,
+	"200": $gray-200,
+	"300": $gray-300,
+	"400": $gray-400,
+	"500": $gray-500,
+	"600": $gray-600,
+	"700": $gray-700,
+	"800": $gray-800,
+	"900": $gray-900,
+);
+
+$blue: #3f88c5;
+$red: #e74b68;
+$orange: #e28503;
+$yellow: #f3c221;
+$green: #9ad557;
+
+$colors: (
+	"blue": $blue,
+	"red": $red,
+	"orange": $orange,
+	"yellow": $yellow,
+	"green": $green,
+	"white": $white,
+	"gray": $gray-600,
+	"gray-dark": $gray-800,
+);
+
+$color-deck-part-main: #9f653d;
+$color-deck-part-extra: #756aaa;
+$color-deck-part-side: #628045;
+
+$color-vendor-tcgplayer: #0e5b93;
+$color-vendor-cardmarket: #012169;
+$color-vendor-coolstuffinc: #2fccd0;
+
+$primary: $color-deck-part-main;
+$secondary: color.adjust($color-deck-part-main, $lightness: -13.25%);
+$success: $green;
+$info: $blue;
+$warning: $orange;
+$danger: $red;
+$light: $gray-100;
+$dark: $gray-800;
+
+$theme-colors: (
+	"primary": $primary,
+	"secondary": $secondary,
+	"success": $success,
+	"info": $info,
+	"warning": $warning,
+	"danger": $danger,
+	"light": $light,
+	"dark": $dark,
+);
+
+// Font system
+
+// Bootstrap default re-exported for tooltip
+$font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+	"Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif,
+	"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+$font-size-base: 0.9rem;
+$font-size-lg: $font-size-base * 1.15;
+$font-size-md: $font-size-base * 0.925;
+$font-size-sm: $font-size-base * 0.85;
+
+// Breakpoints / Spacing
+
+$grid-breakpoints: (
+	xs: 0,
+	sm: 600px,
+	md: 766px,
+	lg: 1054px,
+	xl: 1220px,
+);
+
+$container-max-widths: (
+	sm: 600px,
+	md: 766px,
+	lg: 1054px,
+	xl: 1220px,
+);
+
+$margin-sm: 0.25rem;
+$margin-md: 0.5rem;
+$margin-lg: 1rem;

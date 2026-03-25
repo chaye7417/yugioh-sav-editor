@@ -1,0 +1,68 @@
+{
+	"name": "yugioh-deck-tool",
+	"version": "5.7.0",
+	"private": true,
+	"type": "module",
+	"description": "A tool to view deck prices, share and edit decks, create random decks and much more",
+	"author": "F. Rilling",
+	"bugs": {
+		"url": "https://github.com/RillingDev/yugioh-deck-tool/issues"
+	},
+	"homepage": "https://github.com/RillingDev/yugioh-deck-tool#readme",
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/RillingDev/yugioh-deck-tool.git"
+	},
+	"scripts": {
+		"dev": "vite",
+		"build": "run-p type-check build-only",
+		"preview": "vite preview --port 4173",
+		"test:unit": "vitest --environment jsdom",
+		"build-only": "vite build",
+		"type-check": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false",
+		"lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+		"format": "prettier --write src/"
+	},
+	"dependencies": {
+		"base64-js": "^1.5.1",
+		"bootstrap": "^4.6.1",
+		"bootstrap-vue": "^2.21.2",
+		"html2canvas": "^1.4.1",
+		"lightdash": "^14.0.0",
+		"lodash-es": "^4.17.21",
+		"pako": "^2.0.4",
+		"pinia": "^2.0.23",
+		"tippy.js": "^6.3.7",
+		"vue": "^2.7.13",
+		"vue-select": "^3.18.3",
+		"vuedraggable": "^2.24.3"
+	},
+	"devDependencies": {
+		"@rushstack/eslint-patch": "^1.2.0",
+		"@tsconfig/node22": "^22.0.0",
+		"@types/base64-js": "^1.3.0",
+		"@types/jsdom": "^21.1.1",
+		"@types/lodash-es": "^4.17.6",
+		"@types/node": "^22.13.1",
+		"@types/pako": "^2.0.0",
+		"@types/vue-select": "^3.16.0",
+		"@vitejs/plugin-vue2": "^2.2.0",
+		"@vitest/coverage-v8": "^3.0.5",
+		"@vue/eslint-config-prettier": "^8.0.0",
+		"@vue/eslint-config-typescript": "^11.0.0",
+		"@vue/test-utils": "^1.3.0",
+		"@vue/tsconfig": "^0.4.0",
+		"eslint": "^8.5.0",
+		"eslint-plugin-vue": "^9.0.0",
+		"jsdom": "^26.0.0",
+		"npm-run-all": "^4.1.5",
+		"prettier": "^3.0.2",
+		"sass": "^1.53.0",
+		"typescript": "~5.1.6",
+		"vite": "^7.1.3",
+		"vitest": "^3.0.5",
+		"vue-template-compiler": "^2.7.7",
+		"vue-tsc": "^0.38.8"
+	}
+}

@@ -1,0 +1,25 @@
+name: Deploy Development Build
+
+on:
+    push:
+        branches: [development]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+            - run: npm ci
+            - run: npm run build
+            - uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+              with:
+                  local-dir: ./dist/
+                  protocol: ${{ secrets.FTP_PROTOCOL }}
+                  server: ${{ secrets.FTP_SERVER }}
+                  username: ${{ secrets.FTP_USERNAME }}
+                  password: ${{ secrets.FTP_PASSWORD }}
+                  server-dir: ${{ secrets.FTP_SERVER_DIR }}
