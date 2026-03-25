@@ -14,8 +14,8 @@ import type { PropType } from "vue";
 import { computed, defineComponent } from "vue";
 import type { Card } from "@/core/lib";
 
-const CARD_IMG_BASE = "https://cdn.233.momobako.com/images/cards/";
-const PLACEHOLDER_IMG = "https://cdn.233.momobako.com/images/cards/4035199.jpg";
+const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
+const PLACEHOLDER_IMG = "https://cdn.233.momobako.com/ygopro/pics/4035199.jpg";
 
 export default defineComponent({
 	components: {},

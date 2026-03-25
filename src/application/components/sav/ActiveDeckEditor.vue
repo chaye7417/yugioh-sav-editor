@@ -3,7 +3,7 @@
 		<!-- 顶部：卡组名编辑 + 操作 -->
 		<div class="recipe-editor__header">
 			<div class="recipe-editor__name-row">
-				<label class="recipe-editor__name-label">卡组名</label>
+				<label class="recipe-editor__name-label">活动卡组</label>
 				<input
 					v-model="deckName"
 					type="text"
@@ -14,6 +14,15 @@
 				/>
 			</div>
 			<div class="recipe-editor__actions">
+				<label class="btn btn-sm btn-outline-secondary">
+					导入 YDK
+					<input
+						type="file"
+						accept=".ydk"
+						class="recipe-editor__hidden-input"
+						@change="importYdk"
+					/>
+				</label>
 				<button class="btn btn-sm btn-outline-secondary" @click="exportYdk">
 					导出 YDK
 				</button>
@@ -29,7 +38,6 @@
 						type="text"
 						class="form-control form-control-sm"
 						placeholder="搜索卡名..."
-						@input="onSearch"
 					/>
 				</div>
 
@@ -186,9 +194,10 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from "vue";
+import { computed, defineComponent, ref } from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
+import type { ActiveDeck } from "@/core/sav";
 import {
 	getMainType,
 	getSubTypeDescription,
@@ -208,7 +217,7 @@ interface SearchResultItem {
 }
 
 export default defineComponent({
-	name: "RecipeEditor",
+	name: "ActiveDeckEditor",
 	setup() {
 		const savStore = useSavStore();
 
@@ -218,15 +227,15 @@ export default defineComponent({
 		const filterLevel = ref(0);
 		const deckName = ref("");
 
-		// 当槽位切换时同步卡组名
-		watch(
-			() => savStore.activeRecipeSlot,
-			() => {
-				const recipe = savStore.activeRecipe;
-				deckName.value = recipe?.name ?? "";
-			},
-			{ immediate: true }
-		);
+		// 初始化卡组名
+		if (savStore.saveData) {
+			deckName.value = savStore.saveData.activeDeck.name;
+		}
+
+		/** 获取当前活动卡组的快捷方式 */
+		function getDeck(): ActiveDeck | null {
+			return savStore.saveData?.activeDeck ?? null;
+		}
 
 		// 搜索结果
 		const searchResults = computed<SearchResultItem[]>(() => {
@@ -260,7 +269,6 @@ export default defineComponent({
 				.map(([cid, card]) => ({ cid, card }));
 		});
 
-		// 将 CID 列表转为 CardEntry 列表
 		function cidsToCards(cids: number[]): CardEntry[] {
 			const result: CardEntry[] = [];
 			for (const cid of cids) {
@@ -271,21 +279,21 @@ export default defineComponent({
 		}
 
 		const mainCards = computed(() => {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return [];
-			return cidsToCards(recipe.mainCids);
+			const deck = getDeck();
+			if (!deck) return [];
+			return cidsToCards(deck.mainCids);
 		});
 
 		const extraCards = computed(() => {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return [];
-			return cidsToCards(recipe.extraCids);
+			const deck = getDeck();
+			if (!deck) return [];
+			return cidsToCards(deck.extraCids);
 		});
 
 		const sideCards = computed(() => {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return [];
-			return cidsToCards(recipe.sideCids);
+			const deck = getDeck();
+			if (!deck) return [];
+			return cidsToCards(deck.sideCids);
 		});
 
 		function getCardImageUrl(passcode: string): string {
@@ -300,7 +308,6 @@ export default defineComponent({
 			tip += "]";
 
 			if (card.type & 0x1) {
-				// 怪兽
 				const race = getRaceName(card.race);
 				const attr = getAttributeName(card.attribute);
 				tip += `\n${attr} / ${race} / ★${card.level}`;
@@ -324,75 +331,63 @@ export default defineComponent({
 			return (card.type & EXTRA_DECK_TYPE_MASK) !== 0;
 		}
 
+		function updateDeck(partial: Partial<ActiveDeck>): void {
+			const deck = getDeck();
+			if (!deck) return;
+			savStore.updateActiveDeck({ ...deck, ...partial });
+		}
+
 		function addCard(cidStr: string, card: CardEntry): void {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return;
+			const deck = getDeck();
+			if (!deck) return;
 			const cid = Number(cidStr);
 
 			if (isExtraDeckCard(card)) {
-				if (recipe.extraCids.length >= 15) return;
-				savStore.updateRecipe(savStore.activeRecipeSlot, {
-					...recipe,
-					extraCids: [...recipe.extraCids, cid],
+				if (deck.extraCids.length >= 15) return;
+				updateDeck({
+					extraCids: [...deck.extraCids, cid],
+					extraCount: deck.extraCids.length + 1,
 				});
 			} else {
-				if (recipe.mainCids.length >= 60) return;
-				savStore.updateRecipe(savStore.activeRecipeSlot, {
-					...recipe,
-					mainCids: [...recipe.mainCids, cid],
+				if (deck.mainCids.length >= 60) return;
+				updateDeck({
+					mainCids: [...deck.mainCids, cid],
+					mainCount: deck.mainCids.length + 1,
 				});
 			}
 		}
 
 		function removeFromMain(index: number): void {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return;
-			const newMain = [...recipe.mainCids];
+			const deck = getDeck();
+			if (!deck) return;
+			const newMain = [...deck.mainCids];
 			newMain.splice(index, 1);
-			savStore.updateRecipe(savStore.activeRecipeSlot, {
-				...recipe,
-				mainCids: newMain,
-			});
+			updateDeck({ mainCids: newMain, mainCount: newMain.length });
 		}
 
 		function removeFromExtra(index: number): void {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return;
-			const newExtra = [...recipe.extraCids];
+			const deck = getDeck();
+			if (!deck) return;
+			const newExtra = [...deck.extraCids];
 			newExtra.splice(index, 1);
-			savStore.updateRecipe(savStore.activeRecipeSlot, {
-				...recipe,
-				extraCids: newExtra,
-			});
+			updateDeck({ extraCids: newExtra, extraCount: newExtra.length });
 		}
 
 		function removeFromSide(index: number): void {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return;
-			const newSide = [...recipe.sideCids];
+			const deck = getDeck();
+			if (!deck) return;
+			const newSide = [...deck.sideCids];
 			newSide.splice(index, 1);
-			savStore.updateRecipe(savStore.activeRecipeSlot, {
-				...recipe,
-				sideCids: newSide,
-			});
+			updateDeck({ sideCids: newSide, sideCount: newSide.length });
 		}
 
 		function onNameChange(): void {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return;
-			savStore.updateRecipe(savStore.activeRecipeSlot, {
-				...recipe,
-				name: deckName.value,
-			});
-		}
-
-		function onSearch(): void {
-			// searchResults 是 computed，会自动更新
+			updateDeck({ name: deckName.value });
 		}
 
 		function exportYdk(): void {
-			const recipe = savStore.activeRecipe;
-			if (!recipe) return;
+			const deck = getDeck();
+			if (!deck) return;
 
 			function cidsToPasscodes(cids: number[]): string[] {
 				const result: string[] = [];
@@ -406,21 +401,21 @@ export default defineComponent({
 			const lines: string[] = [];
 			lines.push("#created by WC2009 SAV Editor");
 			lines.push("#main");
-			for (const pc of cidsToPasscodes(recipe.mainCids)) {
+			for (const pc of cidsToPasscodes(deck.mainCids)) {
 				lines.push(pc);
 			}
 			lines.push("#extra");
-			for (const pc of cidsToPasscodes(recipe.extraCids)) {
+			for (const pc of cidsToPasscodes(deck.extraCids)) {
 				lines.push(pc);
 			}
 			lines.push("!side");
-			for (const pc of cidsToPasscodes(recipe.sideCids)) {
+			for (const pc of cidsToPasscodes(deck.sideCids)) {
 				lines.push(pc);
 			}
 
 			const text = lines.join("\n");
 			const blob = new Blob([text], { type: "text/plain" });
-			const name = (recipe.name || "deck") + ".ydk";
+			const name = (deck.name || "active_deck") + ".ydk";
 			const url = URL.createObjectURL(blob);
 
 			const el = document.createElement("a");
@@ -432,8 +427,68 @@ export default defineComponent({
 			URL.revokeObjectURL(url);
 		}
 
+		function importYdk(event: Event): void {
+			const target = event.target as HTMLInputElement;
+			if (!target.files || target.files.length === 0) return;
+
+			const file = target.files[0];
+			const reader = new FileReader();
+			reader.onload = () => {
+				const text = reader.result as string;
+				const lines = text.split(/\r?\n/);
+
+				let section = "";
+				const mainCids: number[] = [];
+				const extraCids: number[] = [];
+				const sideCids: number[] = [];
+
+				for (const line of lines) {
+					const trimmed = line.trim();
+					if (trimmed === "#main") {
+						section = "main";
+						continue;
+					}
+					if (trimmed === "#extra") {
+						section = "extra";
+						continue;
+					}
+					if (trimmed === "!side") {
+						section = "side";
+						continue;
+					}
+					if (trimmed.startsWith("#") || trimmed === "") continue;
+
+					const passcode = trimmed;
+					const cidStr = cardDatabase.getCidByPasscode(passcode);
+					if (!cidStr) continue;
+
+					const cid = Number(cidStr);
+					if (section === "main") {
+						mainCids.push(cid);
+					} else if (section === "extra") {
+						extraCids.push(cid);
+					} else if (section === "side") {
+						sideCids.push(cid);
+					}
+				}
+
+				const newName = file.name.replace(/\.ydk$/i, "").substring(0, 22);
+				savStore.updateActiveDeck({
+					name: newName,
+					mainCount: mainCids.length,
+					sideCount: sideCids.length,
+					extraCount: extraCids.length,
+					mainCids: mainCids.slice(0, 60),
+					sideCids: sideCids.slice(0, 15),
+					extraCids: extraCids.slice(0, 15),
+				});
+				deckName.value = newName;
+			};
+			reader.readAsText(file);
+			target.value = "";
+		}
+
 		return {
-			savStore,
 			searchKeyword,
 			filterType,
 			filterAttribute,
@@ -450,8 +505,8 @@ export default defineComponent({
 			removeFromExtra,
 			removeFromSide,
 			onNameChange,
-			onSearch,
 			exportYdk,
+			importYdk,
 		};
 	},
 });
@@ -482,6 +537,7 @@ export default defineComponent({
 		font-size: 0.85rem;
 		color: #666;
 		white-space: nowrap;
+		font-weight: 600;
 	}
 
 	&__name-input {
@@ -493,6 +549,10 @@ export default defineComponent({
 		gap: 0.5rem;
 	}
 
+	&__hidden-input {
+		display: none;
+	}
+
 	&__body {
 		display: flex;
 		gap: 0.75rem;
@@ -500,7 +560,6 @@ export default defineComponent({
 		overflow: hidden;
 	}
 
-	// 左侧搜索面板
 	&__search-panel {
 		width: 280px;
 		flex-shrink: 0;
@@ -585,7 +644,6 @@ export default defineComponent({
 		width: 100%;
 	}
 
-	// 右侧卡组面板
 	&__deck-panel {
 		flex: 1;
 		overflow-y: auto;

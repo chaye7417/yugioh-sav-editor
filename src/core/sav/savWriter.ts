@@ -39,6 +39,7 @@ import {
 } from "./constants";
 import { compress, decompress } from "./lz10";
 import { crc32 } from "./crc32";
+import { writeActiveDeck } from "./activeDeckEditor";
 
 /**
  * 将修改后的 TDGY gamedata 写回 .sav 的一个 TDGY 块。
@@ -163,6 +164,9 @@ export function writeSav(
 
   // 写入 DP 到 gamedata
   gdView.setUint32(GD_DP, saveData.dp, true);
+
+  // 写入活动卡组到 gamedata
+  writeActiveDeck(saveData.gamedata, saveData.activeDeck);
 
   // LZ10 压缩 gamedata
   const compressed = compress(saveData.gamedata);

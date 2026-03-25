@@ -1,7 +1,7 @@
 <template>
 	<div class="collection">
 		<div class="collection__header">
-			<h2 class="collection__title">背包管理</h2>
+			<h2 class="collection__title">卡片收藏</h2>
 			<div class="collection__stats">
 				持有 {{ stats.uniqueCount }} / 2934 种，共 {{ stats.totalCount }} 张
 			</div>
@@ -101,7 +101,7 @@ import { useSavStore } from "@/application/store/sav";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
 import { getCardCount } from "@/core/sav";
 
-const CARD_IMG_BASE = "https://cdn.233.momobako.com/images/cards/";
+const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
 const PAGE_SIZE = 60;
 
 interface CollectionCardItem {

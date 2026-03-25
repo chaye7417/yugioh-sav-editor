@@ -5,12 +5,12 @@
  */
 
 import { defineStore } from "pinia";
-import type { SaveData, CrgyRecipe } from "@/core/sav";
+import type { SaveData, CrgyRecipe, ActiveDeck } from "@/core/sav";
 import { parseSav, writeSav, setCardCount, setAllCards, readTrunk, getTrunkStats } from "@/core/sav";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
 
 /** 当前激活的面板 */
-export type ActivePanel = "overview" | "recipe" | "collection" | "dp";
+export type ActivePanel = "overview" | "activeDeck" | "recipe" | "collection" | "dp";
 
 interface SavState {
 	/** 上传的文件名 */
@@ -132,6 +132,17 @@ export const useSavStore = defineStore("sav", {
 				sideCids: [],
 				extraCids: [],
 			};
+			this.isModified = true;
+		},
+
+		/**
+		 * 修改活动卡组。
+		 *
+		 * @param deck - 新的活动卡组数据
+		 */
+		updateActiveDeck(deck: ActiveDeck): void {
+			if (!this.saveData) return;
+			this.saveData.activeDeck = deck;
 			this.isModified = true;
 		},
 

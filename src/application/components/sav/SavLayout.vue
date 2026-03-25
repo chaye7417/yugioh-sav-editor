@@ -40,6 +40,13 @@
 						</button>
 						<button
 							class="sav-layout__nav-item"
+							:class="{ 'sav-layout__nav-item--active': savStore.activePanel === 'activeDeck' }"
+							@click="savStore.setActivePanel('activeDeck')"
+						>
+							活动卡组
+						</button>
+						<button
+							class="sav-layout__nav-item"
 							:class="{ 'sav-layout__nav-item--active': savStore.activePanel === 'recipe' }"
 							@click="savStore.setActivePanel('recipe')"
 						>
@@ -50,7 +57,7 @@
 							:class="{ 'sav-layout__nav-item--active': savStore.activePanel === 'collection' }"
 							@click="savStore.setActivePanel('collection')"
 						>
-							背包管理
+							卡片收藏
 						</button>
 						<button
 							class="sav-layout__nav-item"
@@ -68,6 +75,7 @@
 				<!-- 主内容区 -->
 				<main class="sav-layout__content">
 					<SavOverview v-if="savStore.activePanel === 'overview'" />
+					<ActiveDeckEditor v-else-if="savStore.activePanel === 'activeDeck'" />
 					<RecipeEditor v-else-if="savStore.activePanel === 'recipe'" />
 					<Collection v-else-if="savStore.activePanel === 'collection'" />
 					<DpEditor v-else-if="savStore.activePanel === 'dp'" />
@@ -92,6 +100,7 @@ import SavUpload from "./SavUpload.vue";
 import SavOverview from "./SavOverview.vue";
 import RecipeList from "./RecipeList.vue";
 import RecipeEditor from "./RecipeEditor.vue";
+import ActiveDeckEditor from "./ActiveDeckEditor.vue";
 import Collection from "./Collection.vue";
 import DpEditor from "./DpEditor.vue";
 
@@ -102,6 +111,7 @@ export default defineComponent({
 		SavOverview,
 		RecipeList,
 		RecipeEditor,
+		ActiveDeckEditor,
 		Collection,
 		DpEditor,
 	},

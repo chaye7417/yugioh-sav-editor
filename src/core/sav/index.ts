@@ -10,6 +10,7 @@ export type {
   CrgyRecipe,
   TrunkCard,
   CardCollection,
+  ActiveDeck,
 } from "./types";
 
 export { parseSav } from "./savParser";
@@ -23,5 +24,6 @@ export {
   setAllCards,
 } from "./collectionEditor";
 export { readTrunk, trunkToCollection, getTrunkStats } from "./trunkReader";
+export { readActiveDeck, writeActiveDeck } from "./activeDeckEditor";
 export { decompress, compress } from "./lz10";
 export { crc32 } from "./crc32";

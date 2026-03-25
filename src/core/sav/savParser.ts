@@ -5,7 +5,7 @@
  * 验证文件头，定位 TDGY/CRGY 块，LZ10 解压 gamedata。
  */
 
-import type { SaveData, TdgyBlock, CrgyRecipe } from "./types";
+import type { SaveData, TdgyBlock, CrgyRecipe, ActiveDeck } from "./types";
 import {
   SAV_SIZE,
   SAV_MAGIC,
@@ -30,6 +30,7 @@ import {
   CRGY_EXTRA_START,
 } from "./constants";
 import { decompress } from "./lz10";
+import { readActiveDeck } from "./activeDeckEditor";
 
 /**
  * 比较两个 Uint8Array 前 N 字节是否相同。
@@ -175,6 +176,9 @@ export function parseSav(buffer: ArrayBuffer): SaveData {
   const gamedata = new Uint8Array(tdgy.gamedata.length);
   gamedata.set(tdgy.gamedata);
 
+  // 解析活动卡组
+  const activeDeck = readActiveDeck(gamedata);
+
   return {
     rawBuffer: buffer,
     tdgy,
@@ -182,5 +186,6 @@ export function parseSav(buffer: ArrayBuffer): SaveData {
     recipes,
     dp,
     gamedata,
+    activeDeck,
   };
 }

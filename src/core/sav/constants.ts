@@ -89,6 +89,32 @@ export const GD_NIBBLE_ARRAY = 0xa4e;
 /** 半字节数组大小 */
 export const GD_NIBBLE_ARRAY_SIZE = 1488;
 
+// ── 活动卡组 (在解压后 gamedata 中) ─────────────────────────
+/** 活动卡组标志位 (uint8, 0x01 = 有效) */
+export const GD_ACTIVE_DECK_FLAG = 0xC0;
+/** 活动卡组名偏移 (23 bytes, ASCII/Shift-JIS, null 结尾) */
+export const GD_ACTIVE_DECK_NAME = 0xC1;
+/** 活动卡组名最大长度 */
+export const GD_ACTIVE_DECK_NAME_SIZE = 23;
+/** 主卡组数量偏移 (uint32 LE) */
+export const GD_ACTIVE_DECK_MAIN_COUNT = 0xDC;
+/** 副卡组数量偏移 (uint32 LE) */
+export const GD_ACTIVE_DECK_SIDE_COUNT = 0xE0;
+/** 额外卡组数量偏移 (uint32 LE) */
+export const GD_ACTIVE_DECK_EXTRA_COUNT = 0xE4;
+/** 主卡组 CID 数组起始偏移 */
+export const GD_ACTIVE_DECK_CARDS = 0xE8;
+/** 主卡组固定槽位数 */
+export const GD_ACTIVE_DECK_MAIN_SLOTS = 60;
+/** 副卡组 CID 数组起始偏移 */
+export const GD_ACTIVE_DECK_SIDE_OFFSET = 0x160;
+/** 副卡组固定槽位数 */
+export const GD_ACTIVE_DECK_SIDE_SLOTS = 15;
+/** 额外卡组 CID 数组起始偏移 */
+export const GD_ACTIVE_DECK_EXTRA_OFFSET = 0x17E;
+/** 额外卡组固定槽位数 */
+export const GD_ACTIVE_DECK_EXTRA_SLOTS = 15;
+
 // ── CID 有效范围 ─────────────────────────────────────────
 /** 最小有效 CID */
 export const CID_MIN = 3500;

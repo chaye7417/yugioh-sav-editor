@@ -37,6 +37,24 @@ export interface TrunkCard {
 /** 卡片收藏 (CID → 持有数量) */
 export type CardCollection = Map<number, number>;
 
+/** 活动卡组（当前作战用） */
+export interface ActiveDeck {
+  /** 卡组名称 */
+  name: string;
+  /** 主卡组实际数量 */
+  mainCount: number;
+  /** 副卡组实际数量 */
+  sideCount: number;
+  /** 额外卡组实际数量 */
+  extraCount: number;
+  /** 主卡组 CID 列表 (长度 = mainCount) */
+  mainCids: number[];
+  /** 副卡组 CID 列表 (长度 = sideCount) */
+  sideCids: number[];
+  /** 额外卡组 CID 列表 (长度 = extraCount) */
+  extraCids: number[];
+}
+
 /** 整体存档数据 */
 export interface SaveData {
   /** 原始 .sav 缓冲区引用 */
@@ -51,4 +69,6 @@ export interface SaveData {
   dp: number;
   /** 解压后的 gamedata (可变副本，用于编辑) */
   gamedata: Uint8Array;
+  /** 活动卡组 */
+  activeDeck: ActiveDeck;
 }

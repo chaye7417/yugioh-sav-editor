@@ -56,9 +56,39 @@
 			</div>
 		</div>
 
-		<!-- 背包统计 -->
+		<!-- 活动卡组 -->
+		<div v-if="activeDeckInfo" class="sav-overview__section">
+			<h3 class="sav-overview__section-title">活动卡组</h3>
+			<div class="sav-overview__stat-row">
+				<span class="sav-overview__stat-label">卡组名</span>
+				<span class="sav-overview__stat-value">
+					{{ activeDeckInfo.name || '(未命名)' }}
+				</span>
+			</div>
+			<div class="sav-overview__stat-row">
+				<span class="sav-overview__stat-label">主卡组</span>
+				<span class="sav-overview__stat-value">{{ activeDeckInfo.mainCount }} 张</span>
+			</div>
+			<div class="sav-overview__stat-row">
+				<span class="sav-overview__stat-label">副卡组</span>
+				<span class="sav-overview__stat-value">{{ activeDeckInfo.sideCount }} 张</span>
+			</div>
+			<div class="sav-overview__stat-row">
+				<span class="sav-overview__stat-label">额外卡组</span>
+				<span class="sav-overview__stat-value">{{ activeDeckInfo.extraCount }} 张</span>
+			</div>
+			<button
+				class="btn btn-sm btn-outline-primary"
+				style="margin-top: 0.5rem"
+				@click="goToActiveDeck"
+			>
+				编辑活动卡组
+			</button>
+		</div>
+
+		<!-- 卡片收藏 -->
 		<div class="sav-overview__section">
-			<h3 class="sav-overview__section-title">背包卡片</h3>
+			<h3 class="sav-overview__section-title">卡片收藏</h3>
 			<div class="sav-overview__stat-row">
 				<span class="sav-overview__stat-label">持有种类</span>
 				<span class="sav-overview__stat-value">
@@ -136,8 +166,26 @@ export default defineComponent({
 				.filter((r) => r.total > 0);
 		});
 
+		const activeDeckInfo = computed(() => {
+			if (!savStore.saveData) return null;
+			const deck = savStore.saveData.activeDeck;
+			if (deck.mainCids.length === 0 && deck.sideCids.length === 0 && deck.extraCids.length === 0) {
+				return null;
+			}
+			return {
+				name: deck.name,
+				mainCount: deck.mainCids.length,
+				sideCount: deck.sideCids.length,
+				extraCount: deck.extraCids.length,
+			};
+		});
+
 		function goToSlot(slot: number): void {
 			savStore.setActiveRecipeSlot(slot);
+		}
+
+		function goToActiveDeck(): void {
+			savStore.setActivePanel("activeDeck");
 		}
 
 		return {
@@ -146,7 +194,9 @@ export default defineComponent({
 			collectionPercent,
 			dpFormatted,
 			usedRecipes,
+			activeDeckInfo,
 			goToSlot,
+			goToActiveDeck,
 		};
 	},
 });

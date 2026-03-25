@@ -7,7 +7,7 @@ import {
 	createSpan,
 } from "./domHelper";
 
-const CARD_IMG_BASE = "https://cdn.233.momobako.com/images/cards/";
+const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
 
 export const createLoadingTooltip = (): HTMLElement =>
 	createDiv(
