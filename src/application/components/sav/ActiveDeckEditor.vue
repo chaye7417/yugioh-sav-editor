@@ -290,7 +290,7 @@ export default defineComponent({
 			if (keyword) {
 				entries = cardDatabase.search(keyword, 200);
 			} else {
-				entries = cardDatabase.getAllEntries().slice(0, 100);
+				entries = cardDatabase.getAllEntries();
 			}
 
 			return entries
@@ -310,7 +310,6 @@ export default defineComponent({
 						return false;
 					return true;
 				})
-				.slice(0, 80)
 				.map(([cid, card]) => ({
 					cid: Number(cid),
 					card,
@@ -730,8 +729,8 @@ export default defineComponent({
 	}
 
 	&__search-results {
-		flex: 1;
 		overflow-y: auto;
+		max-height: calc(100vh - 250px);
 		display: flex;
 		flex-wrap: wrap;
 		align-content: flex-start;
