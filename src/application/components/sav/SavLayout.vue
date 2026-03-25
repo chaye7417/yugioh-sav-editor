@@ -66,6 +66,13 @@
 						>
 							DP 修改
 						</button>
+						<button
+							class="sav-layout__nav-item"
+							:class="{ 'sav-layout__nav-item--active': savStore.activePanel === 'formatLibrary' }"
+							@click="savStore.setActivePanel('formatLibrary')"
+						>
+							赛制卡组库
+						</button>
 					</nav>
 
 					<!-- 当选中预制卡组时，显示卡组列表 -->
@@ -79,6 +86,7 @@
 					<RecipeEditor v-else-if="savStore.activePanel === 'recipe'" />
 					<Collection v-else-if="savStore.activePanel === 'collection'" />
 					<DpEditor v-else-if="savStore.activePanel === 'dp'" />
+					<FormatLibrary v-else-if="savStore.activePanel === 'formatLibrary'" />
 				</main>
 			</div>
 
@@ -103,6 +111,7 @@ import RecipeEditor from "./RecipeEditor.vue";
 import ActiveDeckEditor from "./ActiveDeckEditor.vue";
 import Collection from "./Collection.vue";
 import DpEditor from "./DpEditor.vue";
+import FormatLibrary from "./FormatLibrary.vue";
 
 export default defineComponent({
 	name: "SavLayout",
@@ -114,6 +123,7 @@ export default defineComponent({
 		ActiveDeckEditor,
 		Collection,
 		DpEditor,
+		FormatLibrary,
 	},
 	setup() {
 		const savStore = useSavStore();
