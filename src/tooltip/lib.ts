@@ -1,6 +1,12 @@
 // TODO move the entire tooltip directory into application
 import type { TooltipInstance } from "@/tooltip/api";
 
+declare global {
+	interface Window {
+		yugiohDeckToolTooltip?: TooltipInstance;
+	}
+}
+
 /**
  * Gets the global tooltip instance.
  *

@@ -1,9 +1,8 @@
 import {
 	environmentConfig,
 	tooltipController,
-	ygoprodeckService,
 } from "@/application/ctx";
-import { Environment, getLogger } from "@/core/lib";
+import { getLogger } from "@/core/lib";
 import type { Instance } from "tippy.js";
 import { delegate } from "tippy.js";
 import type { TooltipInstance } from "../api";
@@ -32,19 +31,10 @@ const showTooltip = (
 			if (target instanceof HTMLAnchorElement) {
 				bindReferenceLink(target, card);
 			}
-
-			if (environmentConfig.getEnvironment() == Environment.YGOPRODECK) {
-				// Start request, but do not wait for it to finish.
-				ygoprodeckService
-					.increaseCardViewCount(card)
-					.catch((err) =>
-						logger.warn("Could not update view count.", err),
-					);
-			}
 		})
 		.catch((err) => {
 			instance.setContent(
-				createErrorTooltip("Error while loading card."),
+				createErrorTooltip("加载卡片信息失败。"),
 			);
 			logger.error("Error while loading card.", err);
 		});
@@ -65,10 +55,6 @@ export const bindTooltipHandlers = (context: HTMLElement): TooltipInstance => {
 		},
 	});
 
-	/*
-	 * We use some custom logic for enable/disable to allow a short time to pass before enabling the tooltip.
-	 * This is required to allow other code to finish updating the DOM before we show the next tooltip.
-	 */
 	let cancelPendingEnable = false;
 	return {
 		disable() {

@@ -1,7 +1,7 @@
 <template>
 	<form @submit.prevent="() => {}">
 		<div v-if="isFieldVisible('search')" class="form-group">
-			<label :for="nameId">Name</label>
+			<label :for="nameId">卡名</label>
 			<input
 				:id="nameId"
 				v-model="internalFilter.name"
@@ -12,7 +12,7 @@
 		</div>
 
 		<div v-if="isFieldVisible('description')" class="form-group">
-			<label :for="descriptionId">Description/Effect</label>
+			<label :for="descriptionId">描述/效果</label>
 			<input
 				:id="descriptionId"
 				v-model="internalFilter.description"
@@ -36,7 +36,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Limit</label>
+					<label>禁限</label>
 				</template>
 			</VSelect>
 		</div>
@@ -54,7 +54,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Sets</label>
+					<label>卡包</label>
 				</template>
 			</VSelect>
 		</div>
@@ -69,7 +69,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Archetype</label>
+					<label>系列</label>
 				</template>
 			</VSelect>
 		</div>
@@ -82,7 +82,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Type</label>
+					<label>类型</label>
 				</template>
 			</VSelect>
 		</div>
@@ -100,7 +100,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Monster Type</label>
+					<label>怪兽类型</label>
 				</template>
 			</VSelect>
 		</div>
@@ -116,7 +116,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>{{ internalFilter.typeCategory }} Subtype</label>
+					<label>子类型</label>
 				</template>
 			</VSelect>
 		</div>
@@ -132,7 +132,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Attribute</label>
+					<label>属性</label>
 				</template>
 			</VSelect>
 		</div>
@@ -149,7 +149,7 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Level/Rank</label>
+					<label>等级/阶级</label>
 				</template>
 			</VSelect>
 		</div>
@@ -166,15 +166,10 @@
 				@input="() => onFilterChanged()"
 			>
 				<template #header>
-					<label>Link Markers</label>
+					<label>连接标记</label>
 				</template>
 			</VSelect>
 		</div>
-
-		<template v-if="showCollectionFilter && isFieldVisible('collection')">
-			<hr />
-			<YgoCollectionFilter @change="() => onCollectionFilterChange()" />
-		</template>
 
 		<template v-if="isFieldVisible('reset')">
 			<hr />
@@ -183,7 +178,7 @@
 					class="fas fas-in-button fa-trash"
 					aria-hidden="true"
 				></span>
-				Reset Filter
+				重置筛选
 			</button>
 		</template>
 	</form>
@@ -193,39 +188,31 @@
 import type {
 	BanState,
 	CardFilter,
-	CardPredicate,
 	CardSet,
 	CardType,
 } from "@/core/lib";
 import {
 	CardTypeCategory,
 	DEFAULT_BAN_STATE_ARR,
-	Environment,
 } from "@/core/lib";
 import type { PropType } from "vue";
 import { computed, defineComponent, reactive, watch } from "vue";
 import { clone } from "lodash";
 
 import VSelect from "vue-select";
-import YgoCollectionFilter from "./yugiohprodeck/YgoCollectionFilter.vue";
 import { useId } from "@/application/composition/id";
 import { useDataStore } from "@/application/store/data";
 import { useFormatStore } from "@/application/store/format";
-import { useCollectionStore } from "@/application/store/collection";
 import { storeToRefs } from "pinia";
 import {
 	banlistService,
 	cardDatabase,
-	cardPredicateService,
-	environmentConfig,
 	filterService,
-	ygoprodeckController,
 } from "@/application/ctx";
 
 export default defineComponent({
 	components: {
 		VSelect,
-		YgoCollectionFilter,
 	},
 	model: {
 		prop: "filter",
@@ -284,23 +271,8 @@ export default defineComponent({
 		const isMonster = computed<boolean>(
 			() => internalFilter.typeCategory === CardTypeCategory.MONSTER,
 		);
-		const showCollectionFilter = computed<boolean>(
-			() =>
-				environmentConfig.getEnvironment() == Environment.YGOPRODECK &&
-				ygoprodeckController.hasCredentials(),
-		);
-
-		const { cardCountFunction } = storeToRefs(useCollectionStore());
-		const collectionPredicate = computed<CardPredicate | null>(() => {
-			return cardCountFunction.value == null
-				? null
-				: cardPredicateService.createAtLeastOneAvailablePredicate(
-						cardCountFunction.value,
-					);
-		});
 
 		const resetFilter = (): void => {
-			cardCountFunction.value = null;
 			Object.assign(internalFilter, filterService.createDefaultFilter());
 			onFilterChanged();
 		};
@@ -310,16 +282,6 @@ export default defineComponent({
 
 		const onFilterChanged = (): void =>
 			context.emit("change", clone(internalFilter));
-
-		const onCollectionFilterChange = (): void => {
-			// TODO use composition API instead of manual event handling + assignment
-			if (collectionPredicate.value != null) {
-				internalFilter.customPredicates = [collectionPredicate.value];
-			} else {
-				internalFilter.customPredicates = [];
-			}
-			onFilterChanged();
-		};
 
 		const getBanStateName = (banState: BanState): string => banState.name;
 		const getSetName = (set: CardSet): string => set.name;
@@ -362,10 +324,8 @@ export default defineComponent({
 
 			essentialDataLoaded,
 			hasBanStates,
-			showCollectionFilter,
 			isMonster,
 			resetFilter,
-			onCollectionFilterChange,
 			onFilterChanged,
 			isFieldVisible,
 			getBanStateName,

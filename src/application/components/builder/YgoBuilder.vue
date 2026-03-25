@@ -1,21 +1,20 @@
 <template>
 	<div class="builder">
-		<BSidebar id="filterSidebar" title="Filter Cards">
+		<BSidebar id="filterSidebar" title="筛选卡片">
 			<div class="container">
 				<YgoFilter v-model="filter" />
 			</div>
 		</BSidebar>
 		<div class="builder__details">
 			<small class="builder__count">
-				Result: {{ filteredCards.length }} of
-				{{ formatCards.length }} Cards
+				结果：{{ filteredCards.length }} / {{ formatCards.length }} 张
 			</small>
 			<button v-b-toggle.filterSidebar class="btn btn-primary">
 				<span
 					class="fas fas-in-button fa-search"
 					aria-hidden="true"
 				></span>
-				Filter Cards
+				筛选卡片
 			</button>
 		</div>
 		<YgoSortingOptions v-model="sortingOptions" />

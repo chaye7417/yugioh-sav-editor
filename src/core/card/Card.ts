@@ -1,8 +1,13 @@
 import type { Format } from "./format/Format";
 import type { CardSet } from "./set/CardSet";
 import type { CardType } from "./type/CardType";
-import type { Vendor } from "../price/Vendor";
 import type { BanState } from "./format/BanState";
+
+/** Vendor placeholder (price module removed). */
+export interface Vendor {
+	readonly id: string;
+	readonly name: string;
+}
 
 export type CardPrices = ReadonlyMap<Vendor, number>;
 

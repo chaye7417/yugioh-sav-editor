@@ -1,14 +1,14 @@
 <template>
 	<BDropdownItemButton v-b-modal.clearDeck :disabled="deckEmpty">
 		<span class="fas fa-trash fas-in-button" aria-hidden="true"></span>
-		Clear
+		清空
 		<BModal
 			id="clearDeck"
 			modal-class="deck-tool__portal"
-			title="Clear Deck"
+			title="清空卡组"
 			@ok="() => clear()"
 		>
-			<p>Are you sure you want to clear the deck?</p>
+			<p>确定要清空卡组吗？</p>
 		</BModal>
 	</BDropdownItemButton>
 </template>

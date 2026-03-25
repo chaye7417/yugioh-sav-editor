@@ -1,10 +1,10 @@
 <template>
 	<form class="form-group sorting-options">
-		<label class="sorting-options__label w-50"> Sort by </label>
+		<label class="sorting-options__label w-50"> 排序方式 </label>
 		<VSelect
 			v-model="internalSortingOptions.strategy"
 			class="sorting-options__input w-100"
-			title="Sorting Strategy"
+			title="排序策略"
 			:options="sortingStrategies"
 			:clearable="false"
 			:searchable="false"
@@ -13,7 +13,7 @@
 		<VSelect
 			v-model="internalSortingOptions.order"
 			class="sorting-options__input w-100"
-			title="Sorting Order"
+			title="排序顺序"
 			:options="sortingOrders"
 			:clearable="false"
 			:searchable="false"

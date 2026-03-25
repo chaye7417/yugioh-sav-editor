@@ -1,7 +1,7 @@
 <template>
 	<BDropdownItemButton @click="() => openFileDialog()">
 		<span class="fas fa-file fas-in-button" aria-hidden="true"></span>
-		From .ydk Deck File
+		导入 YDK 文件
 	</BDropdownItemButton>
 </template>
 
@@ -50,13 +50,13 @@ export default defineComponent({
 					if (result.missing.length > 0) {
 						showWarning(
 							toast,
-							`${result.missing.length} cards could not be imported!`,
+							`${result.missing.length} 张卡片无法导入！`,
 							"deck-tool__portal",
 						);
 					} else {
 						showSuccess(
 							toast,
-							"Successfully imported deck file.",
+							"卡组文件已导入。",
 							"deck-tool__portal",
 						);
 					}
@@ -65,7 +65,7 @@ export default defineComponent({
 					logger.error("Could not read deck file!", e);
 					showError(
 						toast,
-						"Could not read deck file.",
+						"读取卡组文件失败。",
 						"deck-tool__portal",
 					);
 				});

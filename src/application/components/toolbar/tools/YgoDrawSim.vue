@@ -4,14 +4,14 @@
 			class="fas fa-hand-sparkles fas-in-button"
 			aria-hidden="true"
 		></span>
-		Simulate Start-Hand
+		模拟抽卡
 		<BModal
 			id="drawSim"
 			hide-footer
 			modal-class="deck-tool__portal"
 			body-class="draw-sim__modal"
 			size="lg"
-			title="Start-Hand Simulation"
+			title="起手模拟"
 			@show="() => draw()"
 		>
 			<div class="btn-group" role="group">
@@ -20,14 +20,14 @@
 					class="btn btn-primary"
 					@click="() => setGoingFirst(true)"
 				>
-					Going First
+					先手
 				</button>
 				<button
 					:class="{ active: !goingFirst }"
 					class="btn btn-primary"
 					@click="() => setGoingFirst(false)"
 				>
-					Going Second
+					后手
 				</button>
 			</div>
 			<div class="draw-sim__output">
@@ -38,7 +38,7 @@
 					:card="card"
 				/>
 			</div>
-			<button class="btn btn-primary" @click="() => draw()">Draw</button>
+			<button class="btn btn-primary" @click="() => draw()">抽卡</button>
 		</BModal>
 	</BDropdownItemButton>
 </template>

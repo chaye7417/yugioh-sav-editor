@@ -49,14 +49,14 @@
 					</p>
 					<p>
 						<small v-show="getCardCount(card) != null"
-							>{{ getCardCount(card) }} in Collection</small
+							>持有 {{ getCardCount(card) }} 张</small
 						>
 					</p>
 				</div>
 			</li>
 		</ol>
 		<div v-show="matches.length === 0" class="builder-matches__no-matches">
-			No matches found.
+			没有匹配的卡片。
 		</div>
 	</div>
 </template>
@@ -78,7 +78,6 @@ import { useInfiniteScrolling } from "../../composition/infiniteScrolling";
 import { useTooltip } from "../../composition/tooltip";
 import YgoCard from "../YgoCard.vue";
 import { useDeckStore } from "@/application/store/deck";
-import { useCollectionStore } from "@/application/store/collection";
 import { useFormatStore } from "@/application/store/format";
 import { storeToRefs } from "pinia";
 import { deckService } from "@/application/ctx";
@@ -102,8 +101,6 @@ export default defineComponent({
 	setup(props) {
 		const deckStore = useDeckStore();
 
-		const { cardCountFunction } = storeToRefs(useCollectionStore());
-
 		const { format } = storeToRefs(useFormatStore());
 
 		const toast = useToast();
@@ -123,8 +120,7 @@ export default defineComponent({
 			card.type.category === CardTypeCategory.MONSTER
 				? `${card.attribute!}/${card.subType}`
 				: card.subType;
-		const getCardCount = (card: Card): number | null =>
-			cardCountFunction.value?.(card) ?? null;
+		const getCardCount = (_card: Card): number | null => null;
 
 		const isTouchDevice = computed(browserSupportsTouch);
 
@@ -138,7 +134,7 @@ export default defineComponent({
 				deckStore.addCard({ card, deckPart });
 				showSuccess(
 					toast,
-					"Successfully added card to deck.",
+					"已添加卡片到卡组。",
 					"deck-tool__portal",
 				);
 			}

@@ -1,7 +1,7 @@
 <template>
 	<BDropdownItemButton :disabled="deckEmpty" @click="() => shuffle()">
 		<span class="fas fa-random fas-in-button" aria-hidden="true"></span>
-		Shuffle
+		洗牌
 	</BDropdownItemButton>
 </template>
 

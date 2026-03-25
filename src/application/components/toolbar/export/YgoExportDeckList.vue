@@ -1,7 +1,7 @@
 <template>
 	<BDropdownItemButton @click="() => copyList()">
 		<span class="fas fa-paragraph fas-in-button" aria-hidden="true"></span>
-		To Deck List in Clipboard
+		复制卡组列表
 	</BDropdownItemButton>
 </template>
 
@@ -37,7 +37,7 @@ export default defineComponent({
 				.then(() =>
 					showSuccess(
 						toast,
-						"Successfully copied deck list to clipboard.",
+						"卡组列表已复制到剪贴板。",
 						"deck-tool__portal",
 					),
 				)
@@ -45,7 +45,7 @@ export default defineComponent({
 					logger.error("Could not copy deck list!", err);
 					showError(
 						toast,
-						"Could not copy deck list.",
+						"复制卡组列表失败。",
 						"deck-tool__portal",
 					);
 				});

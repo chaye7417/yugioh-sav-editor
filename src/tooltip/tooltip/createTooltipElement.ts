@@ -1,16 +1,13 @@
-import { priceService, resourceService } from "@/application/ctx";
 import type { Card } from "@/core/lib";
-import { CardTypeCategory, DEFAULT_VENDOR_ARR, Format } from "@/core/lib";
+import { CardTypeCategory } from "@/core/lib";
 import {
 	createDiv,
 	createImg,
-	createLi,
 	createP,
 	createSpan,
-	createUl,
 } from "./domHelper";
 
-// TODO rewrite this in Vue
+const CARD_IMG_BASE = "https://cdn.233.momobako.com/images/cards/";
 
 export const createLoadingTooltip = (): HTMLElement =>
 	createDiv(
@@ -20,7 +17,7 @@ export const createLoadingTooltip = (): HTMLElement =>
 				["card-tooltip__loading"],
 				[
 					createSpan(["fas", "fa-spinner", "fa-spin"], ""),
-					createSpan([], "Loading..."),
+					createSpan([], "加载中..."),
 				],
 			),
 		],
@@ -28,8 +25,6 @@ export const createLoadingTooltip = (): HTMLElement =>
 
 const createMonsterStats = (card: Card): HTMLElement => {
 	const statsChildren: HTMLElement[] = [];
-	const statImage = createImg([], resourceService.getAtkImageUrl(), "");
-	statsChildren.push(statImage);
 	if (card.atk != null) {
 		statsChildren.push(createSpan([], `ATK/ ${card.atk}`));
 	}
@@ -45,39 +40,11 @@ const createSubType = (card: Card): HTMLElement => {
 	const subTypeChildren: HTMLElement[] = [];
 
 	if (card.type.category === CardTypeCategory.MONSTER) {
-		subTypeChildren.push(
-			createImg([], resourceService.getAttributeImageUrl(card), ""),
-		);
-		subTypeChildren.push(createSpan([], `Attribute: ${card.attribute!}`));
+		subTypeChildren.push(createSpan([], `属性: ${card.attribute!}`));
 	}
-	subTypeChildren.push(
-		createImg([], resourceService.getSubTypeImageUrl(card), ""),
-	);
-	subTypeChildren.push(createSpan([], `Type: ${card.subType}`));
+	subTypeChildren.push(createSpan([], `类型: ${card.subType}`));
 
 	return createDiv(["card-tooltip__subtype"], subTypeChildren);
-};
-
-const createPrice = (card: Card): HTMLElement => {
-	const priceItems: HTMLElement[] = [];
-	for (const vendor of DEFAULT_VENDOR_ARR) {
-		const lookupResult = priceService.getPrice([card], vendor);
-		if (lookupResult.missing.length > 0) {
-			continue;
-		}
-		const priceItem = createLi(
-			[
-				"card-tooltip__price__vendor",
-				`card-tooltip__price__vendor--${vendor.id}`,
-			],
-			`${vendor.name}: ${priceService.formatPrice(
-				lookupResult.price,
-				vendor.currency,
-			)}`,
-		);
-		priceItems.push(priceItem);
-	}
-	return createUl(["card-tooltip__price"], priceItems);
 };
 
 const createDescription = (card: Card): HTMLElement =>
@@ -89,21 +56,10 @@ const createDescription = (card: Card): HTMLElement =>
 const createCardDetailsCol = (card: Card): HTMLElement => {
 	const children: HTMLElement[] = [];
 
-	const format = Format.TCG;
 	const primaryDetails = createDiv(
 		["card-tooltip__details"],
 		[
-			createImg(
-				[],
-				resourceService.getTypeImageUrl(card),
-				`Type: ${card.type.name}`,
-			),
 			createSpan(["card-tooltip__name"], card.name),
-			createImg(
-				[],
-				resourceService.getBanStateImageUrl(card, format),
-				`Ban State: ${card.banlist[format].name}`,
-			),
 		],
 	);
 	children.push(primaryDetails);
@@ -121,8 +77,7 @@ const createCardDetailsCol = (card: Card): HTMLElement => {
 			const level = createDiv(
 				["card-tooltip__level"],
 				[
-					createImg([], resourceService.getLevelImageUrl(), ""),
-					createSpan([], `Level/Rank: ${card.level}`),
+					createSpan([], `等级/阶级: ${card.level}`),
 				],
 			);
 			children.push(level);
@@ -130,10 +85,9 @@ const createCardDetailsCol = (card: Card): HTMLElement => {
 			const linkMarkers = createDiv(
 				["card-tooltip__link-markers"],
 				[
-					createImg([], resourceService.getLinkMarkerImageUrl(), ""),
 					createSpan(
 						[],
-						`Link Markers: ${card.linkMarkers.join(", ")}`,
+						`连接标记: ${card.linkMarkers.join(", ")}`,
 					),
 				],
 			);
@@ -143,15 +97,16 @@ const createCardDetailsCol = (card: Card): HTMLElement => {
 
 	children.push(createDescription(card));
 
-	children.push(createPrice(card));
-
 	return createDiv(["card-tooltip__details__col"], children);
 };
 
 const createCardImageCol = (card: Card): HTMLElement => {
+	const imgUrl = card.passcode
+		? `${CARD_IMG_BASE}${card.passcode}.jpg`
+		: card.image?.url ?? "#";
 	const cardImage = createImg(
 		["card-tooltip__image"],
-		card.image?.url ?? "#",
+		imgUrl,
 		"",
 	);
 	return createDiv(["card-tooltip__image__col"], [cardImage]);

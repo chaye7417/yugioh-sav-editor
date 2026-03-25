@@ -1,8 +1,7 @@
 <template>
 	<div id="deckToolDeck" class="deck">
 		<header class="deck__header">
-			<h1 class="deck__total h4">Total</h1>
-			<YgoPrice :cards="allCards" />
+			<h1 class="deck__total h4">总计</h1>
 		</header>
 		<hr />
 		<YgoDeckPart
@@ -16,17 +15,12 @@
 <script lang="ts">
 import { DECK_PART_ARR } from "@/core/lib";
 import type { PropType } from "vue";
-import { computed, defineComponent } from "vue";
-import YgoPrice from "../YgoPrice.vue";
+import { defineComponent } from "vue";
 import YgoDeckPart from "./YgoDeckPart.vue";
-import { useDeckStore } from "@/application/store/deck";
-import { storeToRefs } from "pinia";
-import { deckService } from "@/application/ctx";
 
 export default defineComponent({
 	components: {
 		YgoDeckPart,
-		YgoPrice,
 	},
 	props: {
 		dragGroup: {
@@ -38,12 +32,8 @@ export default defineComponent({
 	setup() {
 		const deckParts = DECK_PART_ARR;
 
-		const { deck } = storeToRefs(useDeckStore());
-		const allCards = computed(() => deckService.getAllCards(deck.value));
-
 		return {
 			deckParts,
-			allCards,
 		};
 	},
 });

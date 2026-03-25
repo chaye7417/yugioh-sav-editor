@@ -9,11 +9,10 @@
 		<header class="deck-part__header">
 			<div class="deck-part__details">
 				<h2 class="deck-part__name h5">
-					{{ deckPartConfig.name }} Deck
+					{{ deckPartNameZh }}
 				</h2>
 				<small class="deck-part__stats">{{ deckPartStats }}</small>
 			</div>
-			<YgoPrice :cards="cards" />
 		</header>
 		<!-- Spill is set to 'revert', actual removal is done in custom draggable variant -->
 		<Draggable
@@ -56,7 +55,6 @@ import {
 } from "../../composition/dragging";
 import { useTooltip } from "../../composition/tooltip";
 import YgoCard from "../YgoCard.vue";
-import YgoPrice from "../YgoPrice.vue";
 import { useDeckStore } from "@/application/store/deck";
 import { useFormatStore } from "@/application/store/format";
 import { storeToRefs } from "pinia";
@@ -64,9 +62,14 @@ import { deckController, deckService } from "@/application/ctx";
 
 const logger = getLogger("YgoDeckPart");
 
+const DECK_PART_NAME_ZH: Record<string, string> = {
+	main: "主卡组",
+	extra: "额外卡组",
+	side: "副卡组",
+};
+
 export default defineComponent({
 	components: {
-		YgoPrice,
 		YgoCard,
 		Draggable,
 	},
@@ -86,6 +89,10 @@ export default defineComponent({
 			() => DefaultDeckPartConfig[props.deckPart],
 		);
 
+		const deckPartNameZh = computed<string>(
+			() => DECK_PART_NAME_ZH[props.deckPart] ?? deckPartConfig.value.name,
+		);
+
 		const deckStore = useDeckStore();
 
 		const { format } = storeToRefs(useFormatStore());
@@ -96,13 +103,13 @@ export default defineComponent({
 		const deckPartEmpty = computed<boolean>(() => cards.value.length === 0);
 		const deckPartStats = computed<string>(() => {
 			const currentCards = cards.value;
-			const base = `${currentCards.length} Cards`;
+			const base = `${currentCards.length} 张`;
 			if (currentCards.length === 0) {
 				return base;
 			}
 			const details = deckController
 				.calculateDetailedTypeStats(props.deckPart, currentCards)
-				.map(([type, count]) => `${count} ${type}`);
+				.map(([type, count]) => `${type} ${count}`);
 			return `${base} (${details.join(" | ")})`;
 		});
 
@@ -165,6 +172,7 @@ export default defineComponent({
 
 		return {
 			deckPartConfig,
+			deckPartNameZh,
 			cards,
 
 			deckPartStats,

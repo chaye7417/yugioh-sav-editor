@@ -1,11 +1,11 @@
 <template>
 	<div class="form-group">
-		<label :for="deckNameId">Deck Name</label>
+		<label :for="deckNameId">卡组名称</label>
 		<input
 			:id="deckNameId"
 			v-model="deckName"
 			class="form-control"
-			placeholder="My Awesome Deck"
+			placeholder="我的卡组"
 			type="text"
 		/>
 	</div>

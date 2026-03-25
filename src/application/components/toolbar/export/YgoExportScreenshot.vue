@@ -5,7 +5,7 @@
 		@click="() => screenshot()"
 	>
 		<span class="fas fa-image fas-in-button" aria-hidden="true"></span>
-		To Screenshot
+		截图导出
 	</BDropdownItemButton>
 </template>
 
@@ -45,7 +45,7 @@ export default defineComponent({
 
 			showInfo(
 				toast,
-				"Creating screenshot, please wait.",
+				"正在生成截图，请稍候。",
 				"deck-tool__portal",
 			);
 			createScreenshot(deckEl, deck.value.name ?? "Deck Screenshot", {
@@ -58,7 +58,7 @@ export default defineComponent({
 				.then((file) => {
 					showSuccess(
 						toast,
-						"Screenshot created.",
+						"截图已生成。",
 						"deck-tool__portal",
 					);
 					downloadFile(file, document);
@@ -67,7 +67,7 @@ export default defineComponent({
 					logger.error("Could not create screenshot!", err);
 					showError(
 						toast,
-						"Could not create screenshot.",
+						"生成截图失败。",
 						"deck-tool__portal",
 					);
 				});

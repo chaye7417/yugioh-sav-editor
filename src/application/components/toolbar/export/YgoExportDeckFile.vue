@@ -1,7 +1,7 @@
 <template>
 	<BDropdownItemButton @click="() => downloadDeck()">
 		<span class="fas fa-file fas-in-button" aria-hidden="true"></span>
-		To .ydk Deck File
+		导出 YDK 文件
 	</BDropdownItemButton>
 </template>
 
@@ -33,7 +33,7 @@ export default defineComponent({
 			downloadFile(file, document);
 			showSuccess(
 				toast,
-				"Successfully exported deck file.",
+				"卡组文件已导出。",
 				"deck-tool__portal",
 			);
 		};

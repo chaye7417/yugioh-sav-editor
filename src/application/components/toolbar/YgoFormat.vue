@@ -7,7 +7,7 @@
 			:searchable="false"
 		>
 			<template #header>
-				<label>Format</label>
+				<label>赛制</label>
 			</template>
 		</VSelect>
 	</div>

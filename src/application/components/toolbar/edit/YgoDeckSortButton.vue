@@ -1,7 +1,7 @@
 <template>
 	<BDropdownItemButton :disabled="deckEmpty" @click="() => sort()">
 		<span class="fas fa-sort fas-in-button" aria-hidden="true"></span>
-		Sort
+		排序
 	</BDropdownItemButton>
 </template>
 

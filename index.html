@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1.0" />
 		<link rel="icon" href="/favicon.ico" />
-		<title>Yu-Gi-Oh! Deck-Tool</title>
+		<title>游戏王 WC2009 存档编辑器</title>
 
 		<link
 			rel="stylesheet"
@@ -14,59 +14,25 @@
 			referrerpolicy="no-referrer"
 		/>
 		<style>
-			/* Styles here are only required when running the application standalone, not when embedding it */
 			body {
 				margin: 0;
 				padding: 0;
 			}
-
-			/* Mirror ygoprodeck.com */
-			.standalone-wrapper {
-				width: 94%;
-				margin: 0 auto;
-				max-width: 1220px;
-			}
 		</style>
 	</head>
 	<body>
-		<div class="standalone-wrapper">
-			<div class="deck-tool">
-				<header class="deck-tool__header">
-					<h1>Yu-Gi-Oh! Deck-Tool</h1>
-					<p>
-						A tool to share and edit decks, view deck prices, and
-						much more.
-					</p>
-					<p>
-						Hint: You can add and remove cards from the deck below
-						by dragging cards.
-					</p>
-				</header>
-				<noscript>
-					<strong>
-						We're sorry but this application doesn't work properly
-						without JavaScript enabled. Please enable it to
-						continue.
-					</strong>
-				</noscript>
-				<main>
-					<div
-						id="deckToolApplication"
-						class="deck-tool__application"
-					></div>
-				</main>
-				<footer class="deck-tool__footer">
-					<p>
-						<a
-							href="https://github.com/RillingDev/yugioh-deck-tool"
-							target="_blank"
-							rel="noopener"
-						>
-							Project source code
-						</a>
-					</p>
-				</footer>
-			</div>
+		<div class="deck-tool">
+			<noscript>
+				<strong>
+					本应用需要 JavaScript 支持，请启用后继续。
+				</strong>
+			</noscript>
+			<main>
+				<div
+					id="deckToolApplication"
+					class="deck-tool__application"
+				></div>
+			</main>
 		</div>
 		<script type="module" src="/src/application/main.ts"></script>
 	</body>

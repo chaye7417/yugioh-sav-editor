@@ -13,7 +13,9 @@
 import type { PropType } from "vue";
 import { computed, defineComponent } from "vue";
 import type { Card } from "@/core/lib";
-import { resourceService } from "@/application/ctx";
+
+const CARD_IMG_BASE = "https://cdn.233.momobako.com/images/cards/";
+const PLACEHOLDER_IMG = "https://cdn.233.momobako.com/images/cards/4035199.jpg";
 
 export default defineComponent({
 	components: {},
@@ -30,11 +32,13 @@ export default defineComponent({
 	},
 	emits: [],
 	setup(props) {
-		const imgSrc = computed<string>(
-			() =>
-				props.card.image?.urlSmall ??
-				resourceService.getPlaceholderCardImageUrl(),
-		);
+		const imgSrc = computed<string>(() => {
+			const passcode = props.card.passcode;
+			if (passcode) {
+				return `${CARD_IMG_BASE}${passcode}.jpg`;
+			}
+			return PLACEHOLDER_IMG;
+		});
 
 		return { imgSrc };
 	},

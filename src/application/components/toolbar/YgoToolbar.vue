@@ -11,10 +11,9 @@
 						class="fas fas-in-button fa-file-import"
 						aria-hidden="true"
 					></span>
-					Import
+					导入
 				</template>
 				<YgoImportFile />
-				<YgoImportYdkeUrl />
 			</BDropdown>
 			<BDropdown
 				id="deckExport"
@@ -26,12 +25,10 @@
 						class="fas fas-in-button fa-file-export"
 						aria-hidden="true"
 					></span>
-					Export
+					导出
 				</template>
 				<YgoExportDeckFile />
-				<YgoExportDeckYdkeUrl />
 				<YgoExportDeckList />
-				<YgoExportShareLink />
 				<YgoExportScreenshot />
 			</BDropdown>
 			<BDropdown
@@ -44,7 +41,7 @@
 						class="fas fas-in-button fa-edit"
 						aria-hidden="true"
 					></span>
-					Edit
+					编辑
 				</template>
 				<YgoDeckSortButton />
 				<YgoDeckShuffleButton />
@@ -60,13 +57,10 @@
 						class="fas fas-in-button fa-magic"
 						aria-hidden="true"
 					></span>
-					Tools
+					工具
 				</template>
 				<YgoDrawSim />
-				<BDropdownDivider />
-				<YgoRandomizer />
 			</BDropdown>
-			<YgoBuyLink />
 		</div>
 
 		<div class="toolbar__items" role="group">
@@ -78,21 +72,16 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { BDropdown, BDropdownDivider } from "bootstrap-vue";
+import { BDropdown } from "bootstrap-vue";
 import YgoFormat from "./YgoFormat.vue";
 import YgoDeckName from "./YgoDeckName.vue";
-import YgoBuyLink from "./YgoBuyLink.vue";
-import YgoRandomizer from "./tools/YgoRandomizer.vue";
 import YgoDrawSim from "./tools/YgoDrawSim.vue";
 import YgoDeckSortButton from "./edit/YgoDeckSortButton.vue";
 import YgoDeckShuffleButton from "./edit/YgoDeckShuffleButton.vue";
 import YgoDeckClearButton from "./edit/YgoDeckClearButton.vue";
 import YgoImportFile from "./import/YgoImportDeckFile.vue";
-import YgoImportYdkeUrl from "./import/YgoImportYdkeUrl.vue";
 import YgoExportDeckFile from "./export/YgoExportDeckFile.vue";
-import YgoExportDeckYdkeUrl from "./export/YgoExportDeckYdkeUrl.vue";
 import YgoExportDeckList from "./export/YgoExportDeckList.vue";
-import YgoExportShareLink from "./export/YgoExportShareLink.vue";
 import YgoExportScreenshot from "./export/YgoExportScreenshot.vue";
 import { useDataStore } from "@/application/store/data";
 import { useDeckStore } from "@/application/store/deck";
@@ -102,20 +91,14 @@ export default defineComponent({
 	components: {
 		YgoFormat,
 		YgoDeckName,
-		YgoBuyLink,
-		YgoRandomizer,
 		YgoDrawSim,
 		BDropdown,
-		BDropdownDivider,
 		YgoDeckSortButton,
 		YgoDeckShuffleButton,
 		YgoDeckClearButton,
 		YgoImportFile,
-		YgoImportYdkeUrl,
 		YgoExportDeckFile,
-		YgoExportDeckYdkeUrl,
 		YgoExportDeckList,
-		YgoExportShareLink,
 		YgoExportScreenshot,
 	},
 	props: {},
