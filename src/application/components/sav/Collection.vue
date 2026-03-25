@@ -3,7 +3,7 @@
 		<div class="collection__header">
 			<h2 class="collection__title">卡片收藏</h2>
 			<div class="collection__stats">
-				持有 {{ stats.uniqueCount }} / 2934 种，共 {{ stats.totalCount }} 张
+				持有 {{ stats.uniqueCount }} / {{ totalCardCount }} 种，共 {{ stats.totalCount }} 张
 			</div>
 		</div>
 
@@ -13,6 +13,13 @@
 			</button>
 			<button class="btn btn-sm btn-outline-danger" @click="clearAll">
 				全部清零
+			</button>
+			<button
+				class="btn btn-sm"
+				:class="showAllCards ? 'btn-outline-secondary' : 'btn-info'"
+				@click="showAllCards = !showAllCards"
+			>
+				{{ showAllCards ? '只看已拥有' : '显示全部卡片' }}
 			</button>
 			<div class="collection__search">
 				<input
@@ -119,10 +126,12 @@ export default defineComponent({
 		const visibleCount = ref(PAGE_SIZE);
 		const scrollContainer = ref<HTMLElement | null>(null);
 
-		/** 所有卡片（含持有数量） */
+		/** 所有卡片（含持有数量，依赖 gamedataVersion 以响应修改） */
 		const allCards = computed<CollectionCardItem[]>(() => {
 			const entries = cardDatabase.getAllEntries();
 			if (!savStore.saveData) return [];
+			// 访问 gamedataVersion 以建立响应式依赖
+			void savStore.gamedataVersion;
 
 			return entries.map(([cidStr, card]) => {
 				const count = getCardCount(
@@ -137,9 +146,16 @@ export default defineComponent({
 			});
 		});
 
+		const showAllCards = ref(false);
+
 		/** 筛选后的卡片 */
 		const filteredCards = computed<CollectionCardItem[]>(() => {
 			let result = allCards.value;
+
+			// 默认只显示已拥有的卡
+			if (!showAllCards.value) {
+				result = result.filter((item) => item.count > 0);
+			}
 
 			const keyword = searchKeyword.value.trim().toLowerCase();
 			if (keyword) {
@@ -167,6 +183,7 @@ export default defineComponent({
 		);
 
 		const stats = computed(() => savStore.trunkStats);
+		const totalCardCount = computed(() => cardDatabase.size || 2807);
 
 		// 搜索变化时重置滚动
 		watch([searchKeyword, filterType], () => {
@@ -218,11 +235,13 @@ export default defineComponent({
 			filteredCards,
 			visibleCards,
 			stats,
+			totalCardCount,
 			scrollContainer,
 			onScroll,
 			getCardImageUrl,
 			incrementCard,
 			decrementCard,
+			showAllCards,
 			setAll3,
 			clearAll,
 		};
@@ -235,6 +254,8 @@ export default defineComponent({
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	max-height: 100vh;
+	overflow: hidden;
 	padding: 0.75rem;
 
 	&__header {
@@ -275,6 +296,7 @@ export default defineComponent({
 
 	&__grid {
 		flex: 1;
+		min-height: 0;
 		overflow-y: auto;
 		display: flex;
 		flex-wrap: wrap;

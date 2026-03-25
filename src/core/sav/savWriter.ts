@@ -87,13 +87,14 @@ function writeCrgySlot(
 ): void {
   const view = new DataView(sav.buffer, sav.byteOffset, sav.byteLength);
 
-  // 空卡组: 不写入 (保持原始数据中清零状态)
+  // 空卡组: 清零整个槽位并返回
   if (
     recipe.name === "" &&
     recipe.mainCids.length === 0 &&
     recipe.sideCids.length === 0 &&
     recipe.extraCids.length === 0
   ) {
+    sav.fill(0, slotOffset, slotOffset + CRGY_SIZE);
     return;
   }
 

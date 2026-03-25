@@ -32,7 +32,7 @@
 						拖拽 .sav 文件到此处，或点击选择文件
 					</p>
 					<p class="sav-upload__hint">
-						支持 WC2009 存档（64 KB）
+						支持 WC2009 存档
 					</p>
 				</div>
 			</div>
@@ -53,8 +53,6 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { useSavStore } from "@/application/store/sav";
-
-const EXPECTED_SIZE = 65536; // 64KB
 
 export default defineComponent({
 	name: "SavUpload",
@@ -85,11 +83,6 @@ export default defineComponent({
 
 			if (!file.name.toLowerCase().endsWith(".sav")) {
 				errorMessage.value = "请选择 .sav 文件";
-				return;
-			}
-
-			if (file.size !== EXPECTED_SIZE) {
-				errorMessage.value = `文件大小应为 64 KB (${EXPECTED_SIZE} 字节)，实际 ${file.size} 字节`;
 				return;
 			}
 

@@ -92,7 +92,7 @@
 			<div class="sav-overview__stat-row">
 				<span class="sav-overview__stat-label">持有种类</span>
 				<span class="sav-overview__stat-value">
-					{{ savStore.trunkStats.uniqueCount }} / 2934
+					{{ savStore.trunkStats.uniqueCount }} / {{ totalCardCount }}
 				</span>
 			</div>
 			<div class="sav-overview__progress-bar">
@@ -136,6 +136,7 @@
 <script lang="ts">
 import { computed, defineComponent } from "vue";
 import { useSavStore } from "@/application/store/sav";
+import { cardDatabase } from "@/data/cardDatabase";
 
 export default defineComponent({
 	name: "SavOverview",
@@ -146,8 +147,10 @@ export default defineComponent({
 			Math.round((savStore.usedSlotCount / 50) * 100)
 		);
 
+		const totalCardCount = computed(() => cardDatabase.size || 2807);
+
 		const collectionPercent = computed(() =>
-			Math.round((savStore.trunkStats.uniqueCount / 2934) * 100)
+			Math.round((savStore.trunkStats.uniqueCount / totalCardCount.value) * 100)
 		);
 
 		const dpFormatted = computed(() => {
@@ -191,6 +194,7 @@ export default defineComponent({
 		return {
 			savStore,
 			slotPercent,
+			totalCardCount,
 			collectionPercent,
 			dpFormatted,
 			usedRecipes,

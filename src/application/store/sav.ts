@@ -25,6 +25,8 @@ interface SavState {
 	activePanel: ActivePanel;
 	/** 当前编辑的卡组槽位 */
 	activeRecipeSlot: number;
+	/** gamedata 修改版本号 (用于触发 Vue 响应式更新) */
+	gamedataVersion: number;
 }
 
 export const useSavStore = defineStore("sav", {
@@ -36,6 +38,7 @@ export const useSavStore = defineStore("sav", {
 			isModified: false,
 			activePanel: "overview",
 			activeRecipeSlot: 0,
+			gamedataVersion: 0,
 		};
 	},
 
@@ -57,9 +60,11 @@ export const useSavStore = defineStore("sav", {
 			).length;
 		},
 
-		/** 背包统计 */
+		/** 背包统计 (依赖 gamedataVersion 以在修改后触发重算) */
 		trunkStats(state): { uniqueCount: number; totalCount: number } {
 			if (!state.saveData) return { uniqueCount: 0, totalCount: 0 };
+			// 访问 gamedataVersion 以建立响应式依赖
+			void state.gamedataVersion;
 			const cidToNibble = buildCidToNibbleMap();
 			const trunk = readTrunk(state.saveData.gamedata, cidToNibble);
 			return getTrunkStats(trunk);
@@ -81,6 +86,7 @@ export const useSavStore = defineStore("sav", {
 			this.isModified = false;
 			this.activePanel = "overview";
 			this.activeRecipeSlot = 0;
+			this.gamedataVersion = 0;
 		},
 
 		/**
@@ -157,6 +163,7 @@ export const useSavStore = defineStore("sav", {
 			const card = cardDatabase.getByCid(String(cid));
 			if (!card) return;
 			setCardCount(this.saveData.gamedata, card.nibbleIndex, quantity);
+			this.gamedataVersion++;
 			this.isModified = true;
 		},
 
@@ -169,6 +176,7 @@ export const useSavStore = defineStore("sav", {
 			if (!this.saveData) return;
 			const cidToNibble = buildCidToNibbleMap();
 			setAllCards(this.saveData.gamedata, cidToNibble, quantity);
+			this.gamedataVersion++;
 			this.isModified = true;
 		},
 

@@ -146,7 +146,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .sav-layout {
-	min-height: 100vh;
+	height: 100vh;
 	display: flex;
 	flex-direction: column;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -236,8 +236,10 @@ export default defineComponent({
 
 	&__content {
 		flex: 1;
-		overflow-y: auto;
+		overflow: hidden;
 		background: #fff;
+		display: flex;
+		flex-direction: column;
 	}
 
 	&__hidden-input {
