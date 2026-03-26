@@ -81,12 +81,14 @@
 
 				<!-- 主内容区 -->
 				<main class="sav-layout__content">
-					<SavOverview v-if="savStore.activePanel === 'overview'" />
-					<ActiveDeckEditor v-else-if="savStore.activePanel === 'activeDeck'" />
-					<RecipeEditor v-else-if="savStore.activePanel === 'recipe'" />
-					<Collection v-else-if="savStore.activePanel === 'collection'" />
-					<DpEditor v-else-if="savStore.activePanel === 'dp'" />
-					<FormatLibrary v-else-if="savStore.activePanel === 'formatLibrary'" />
+					<keep-alive>
+						<SavOverview v-if="savStore.activePanel === 'overview'" />
+						<ActiveDeckEditor v-else-if="savStore.activePanel === 'activeDeck'" />
+						<RecipeEditor v-else-if="savStore.activePanel === 'recipe'" />
+						<Collection v-else-if="savStore.activePanel === 'collection'" />
+						<DpEditor v-else-if="savStore.activePanel === 'dp'" />
+						<FormatLibrary v-else-if="savStore.activePanel === 'formatLibrary'" />
+					</keep-alive>
 				</main>
 
 				<!-- 卡片详情面板（常驻） -->
