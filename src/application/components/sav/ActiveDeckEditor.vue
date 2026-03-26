@@ -547,7 +547,7 @@ export default defineComponent({
 			}
 
 			const lines: string[] = [];
-			lines.push("#created by WC2009 SAV Editor");
+			lines.push("#created by YGO NDS SAV Editor");
 			lines.push("#main");
 			for (const pc of cidsToPasscodes(deck.mainCids)) {
 				lines.push(pc);
