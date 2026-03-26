@@ -215,6 +215,28 @@ function bytesEq(a: Uint8Array, b: Uint8Array, len: number): boolean {
  * @returns 匹配的 GameProfile
  * @throws Error 如果文件头不匹配任何已知版本
  */
+/** TDGY 魔数 */
+const TDGY_MAGIC = new Uint8Array([0x54, 0x44, 0x47, 0x59]); // "TDGY"
+
+/**
+ * 检查指定偏移是否有有效的 TDGY 块。
+ */
+function hasTdgyAt(sav: Uint8Array, offset: number): boolean {
+  if (offset + 4 > sav.length) return false;
+  return bytesEq(sav.subarray(offset, offset + 4), TDGY_MAGIC, 4);
+}
+
+/**
+ * 自动检测存档版本。
+ *
+ * - YuGiWC07 文件头 → WC2007
+ * - YuGiWC08 文件头 → 通过 TDGY 块位置区分 WC2008 和 WC2009
+ *   （不依赖文件大小，兼容不同模拟器产生的各种存档尺寸）
+ *
+ * @param buffer - 存档文件 ArrayBuffer
+ * @returns 对应的 GameProfile
+ * @throws Error 无法识别的存档
+ */
 export function detectGameVersion(buffer: ArrayBuffer): GameProfile {
   const sav = new Uint8Array(buffer);
   const header = sav.subarray(0, 8);
@@ -224,17 +246,24 @@ export function detectGameVersion(buffer: ArrayBuffer): GameProfile {
     return WC2007_PROFILE;
   }
 
-  // YuGiWC08 → 按大小区分 WC2008 / WC2009
+  // YuGiWC08 → 通过 TDGY 块位置区分 WC2008 和 WC2009
   if (bytesEq(header, SAV_MAGIC_WC08, 8)) {
-    const size = buffer.byteLength;
-    if (size >= WC2008_PROFILE.savMinSize) {
-      return WC2008_PROFILE;
+    // 先检查 WC2009 的 TDGY 位置（偏移较小，64KB 存档也能覆盖）
+    const has2009 = WC2009_PROFILE.tdgyOffsets.some((o) => hasTdgyAt(sav, o));
+    // 再检查 WC2008 的 TDGY 位置（偏移较大，需要 256KB+）
+    const has2008 = WC2008_PROFILE.tdgyOffsets.some((o) => hasTdgyAt(sav, o));
+
+    if (has2009 && !has2008) return WC2009_PROFILE;
+    if (has2008 && !has2009) return WC2008_PROFILE;
+    if (has2008 && has2009) {
+      // 极罕见：两个位置都有 TDGY，按文件大小推测
+      return buffer.byteLength >= WC2008_PROFILE.savMinSize
+        ? WC2008_PROFILE
+        : WC2009_PROFILE;
     }
-    if (size >= WC2009_PROFILE.savMinSize) {
-      return WC2009_PROFILE;
-    }
+
     throw new Error(
-      `存档文件过小 (${size} bytes)，最小需要 ${WC2009_PROFILE.savMinSize} bytes (64KB)`,
+      "存档文件头为 YuGiWC08，但未找到有效的 TDGY 块，文件可能已损坏",
     );
   }
 
