@@ -39,6 +39,16 @@
 			<p v-if="errorMessage" class="sav-upload__error">
 				{{ errorMessage }}
 			</p>
+
+			<div class="sav-upload__default">
+				<p class="sav-upload__default-label">或使用空白存档开始编辑：</p>
+				<div class="sav-upload__default-buttons">
+					<button class="btn btn-sm btn-outline-secondary" @click="loadDefault('wc2007')">WC2007</button>
+					<button class="btn btn-sm btn-outline-secondary" @click="loadDefault('wc2008')">WC2008</button>
+					<button class="btn btn-sm btn-outline-secondary" @click="loadDefault('wc2009')">WC2009</button>
+				</div>
+			</div>
+
 			<input
 				ref="fileInput"
 				type="file"
@@ -109,11 +119,26 @@ export default defineComponent({
 			}
 		}
 
+		async function loadDefault(version: string): Promise<void> {
+			errorMessage.value = "";
+			try {
+				const url = `${import.meta.env.BASE_URL}default-sav/${version}.sav`;
+				const resp = await fetch(url);
+				if (!resp.ok) throw new Error(`下载失败: ${resp.status}`);
+				const buffer = await resp.arrayBuffer();
+				const file = new File([buffer], `${version}.sav`);
+				await savStore.loadSav(file);
+			} catch (e) {
+				errorMessage.value = e instanceof Error ? e.message : "加载默认存档失败";
+			}
+		}
+
 		return {
 			fileInput,
 			isDragging,
 			errorMessage,
 			handleClick,
+			loadDefault,
 			onDragEnter,
 			onDragOver,
 			onDragLeave,
@@ -192,6 +217,22 @@ export default defineComponent({
 		font-size: 0.8rem;
 		color: #999;
 		margin: 0;
+	}
+
+	&__default {
+		margin-top: 1.5rem;
+	}
+
+	&__default-label {
+		font-size: 0.85rem;
+		color: #888;
+		margin-bottom: 0.5rem;
+	}
+
+	&__default-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 0.5rem;
 	}
 
 	&__error {
