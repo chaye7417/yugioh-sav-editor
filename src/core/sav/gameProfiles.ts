@@ -70,6 +70,8 @@ export interface GameProfile {
   gdDeckMainMax: number;
   /** 半字节数组偏移 (卡片收藏) */
   gdNibbleArray: number;
+  /** 持有标记数组偏移 (flag array，防止幽灵卡) */
+  gdFlagArray: number;
 }
 
 // ── WC2007 配置 ──────────────────────────────────────────────
@@ -104,6 +106,7 @@ export const WC2007_PROFILE: GameProfile = {
   gdDeckMainCids: 0x0bc,
   gdDeckMainMax: 80,
   gdNibbleArray: 0x0260,
+  gdFlagArray: 0x05a1,
 };
 
 // ── WC2008 配置 ──────────────────────────────────────────────
@@ -138,6 +141,7 @@ export const WC2008_PROFILE: GameProfile = {
   gdDeckMainCids: 0x0d4,
   gdDeckMainMax: 80,
   gdNibbleArray: 0x65a,
+  gdFlagArray: 0x0a5a,
 };
 
 // ── WC2009 配置 ──────────────────────────────────────────────
@@ -172,6 +176,7 @@ export const WC2009_PROFILE: GameProfile = {
   gdDeckMainCids: 0xe8,
   gdDeckMainMax: 60,
   gdNibbleArray: 0xa4e,
+  gdFlagArray: 0x100a,
 };
 
 // ── 全部配置 ─────────────────────────────────────────────────

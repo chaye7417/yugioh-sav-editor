@@ -204,7 +204,7 @@ export const useSavStore = defineStore("sav", {
 			if (!this.saveData) return;
 			const card = cardDatabase.getByCid(String(cid));
 			if (!card) return;
-			setCardCount(this.saveData.gamedata, card.nibbleIndex, quantity, this.saveData.profile.gdNibbleArray);
+			setCardCount(this.saveData.gamedata, card.nibbleIndex, quantity, this.saveData.profile.gdNibbleArray, this.saveData.profile.gdFlagArray);
 			this.gamedataVersion++;
 			this.isModified = true;
 		},
@@ -217,7 +217,7 @@ export const useSavStore = defineStore("sav", {
 		setAllCardsQuantity(quantity: number = 3): void {
 			if (!this.saveData) return;
 			const cidToNibble = buildCidToNibbleMap();
-			setAllCards(this.saveData.gamedata, cidToNibble, quantity, this.saveData.profile.gdNibbleArray);
+			setAllCards(this.saveData.gamedata, cidToNibble, quantity, this.saveData.profile.gdNibbleArray, this.saveData.profile.gdFlagArray);
 			this.gamedataVersion++;
 			this.isModified = true;
 		},
@@ -257,7 +257,7 @@ export const useSavStore = defineStore("sav", {
 				const nb = this.saveData.profile.gdNibbleArray;
 				const currentCount = getCardCount(this.saveData.gamedata, card.nibbleIndex, nb);
 				if (currentCount < requiredCount) {
-					setCardCount(this.saveData.gamedata, card.nibbleIndex, requiredCount, nb);
+					setCardCount(this.saveData.gamedata, card.nibbleIndex, requiredCount, nb, this.saveData.profile.gdFlagArray);
 					changed = true;
 				}
 			}
