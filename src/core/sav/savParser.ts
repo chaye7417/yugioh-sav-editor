@@ -136,9 +136,9 @@ function parseCrgySlot(sav: Uint8Array, slotOffset: number): CrgyRecipe {
 export function parseSav(buffer: ArrayBuffer): SaveData {
   const sav = new Uint8Array(buffer);
 
-  // 验证文件大小
-  if (sav.length !== SAV_SIZE) {
-    throw new Error(`SAV 文件大小应为 ${SAV_SIZE}, 实际 ${sav.length}`);
+  // 验证文件大小（允许模拟器扩展的存档，只要不小于 SAV_SIZE）
+  if (sav.length < SAV_SIZE) {
+    throw new Error(`SAV 文件太小: 最少需要 ${SAV_SIZE} 字节, 实际 ${sav.length}`);
   }
 
   // 验证文件头 "YuGiWC08"
