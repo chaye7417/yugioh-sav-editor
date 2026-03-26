@@ -56,9 +56,10 @@ export const useSavStore = defineStore("sav", {
 			return state.saveData?.profile?.displayName ?? "WC2009";
 		},
 
-		/** 当前游戏版本的短名称 (如 "WC2009"、"WC2008") */
+		/** 当前游戏版本的短名称 (如 "WC2009"、"WC2008"、"WC2007") */
 		gameShortName(state): string {
 			const ver = state.saveData?.profile?.version;
+			if (ver === "wc2007") return "WC2007";
 			if (ver === "wc2008") return "WC2008";
 			return "WC2009";
 		},
