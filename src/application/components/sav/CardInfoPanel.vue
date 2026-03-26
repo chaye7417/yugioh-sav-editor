@@ -11,7 +11,7 @@
 			<div class="card-info-panel__name">{{ store.info.name }}</div>
 
 			<div v-if="!store.info.inWc2009" class="card-info-panel__warn">
-				不在 WC2009 卡池
+				不在 {{ gameShortName }} 卡池
 			</div>
 
 			<div class="card-info-panel__meta">
@@ -37,6 +37,7 @@
 <script lang="ts">
 import { defineComponent, computed } from "vue";
 import { useCardHoverStore } from "@/application/store/cardHover";
+import { useSavStore } from "@/application/store/sav";
 
 const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
 
@@ -44,10 +45,12 @@ export default defineComponent({
 	name: "CardInfoPanel",
 	setup() {
 		const store = useCardHoverStore();
+		const savStore = useSavStore();
 		const imgUrl = computed(() =>
 			store.artworkId ? `${CARD_IMG_BASE}${store.artworkId}.jpg` : "",
 		);
-		return { store, imgUrl };
+		const gameShortName = computed(() => savStore.gameShortName);
+		return { store, imgUrl, gameShortName };
 	},
 });
 </script>

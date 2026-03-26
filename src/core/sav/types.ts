@@ -1,6 +1,8 @@
 /**
- * WC2009 存档相关类型定义。
+ * 存档相关类型定义。
  */
+
+import type { GameProfile } from "./gameProfiles";
 
 /** 预制卡组数据 */
 export interface CrgyRecipe {
@@ -57,6 +59,8 @@ export interface ActiveDeck {
 
 /** 整体存档数据 */
 export interface SaveData {
+  /** 游戏版本配置 */
+  profile: GameProfile;
   /** 原始 .sav 缓冲区引用 */
   rawBuffer: ArrayBuffer;
   /** 主 TDGY 块 */

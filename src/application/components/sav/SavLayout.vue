@@ -7,7 +7,7 @@
 		<template v-else>
 			<!-- 顶部栏 -->
 			<header class="sav-layout__topbar">
-				<h1 class="sav-layout__brand">游戏王 WC2009 存档编辑器</h1>
+				<h1 class="sav-layout__brand">游戏王 {{ savStore.gameShortName }} 存档编辑器</h1>
 				<div class="sav-layout__topbar-actions">
 					<button
 						class="btn btn-sm btn-outline-secondary"

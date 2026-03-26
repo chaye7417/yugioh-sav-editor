@@ -1,14 +1,17 @@
 /**
- * 构建脚本：从 SQLite CDB 提取 WC2009 卡池的中文卡片数据，生成 public/cards.json。
+ * 构建脚本：从 SQLite CDB 提取 WC 系列卡池的中文卡片数据，生成 public/cards[-wc20XX].json。
  *
  * 数据流：
- * 1. cid_to_nibble.json 确定 WC2009 卡池（2934 张）
+ * 1. cid_to_nibble.json 确定卡池
  * 2. konami_card_db.json 提供 CID → 英文名
  * 3. pw_to_name.json 提供 passcode → 英文名（反转得到 英文名 → passcode）
  * 4. 通过英文名关联 CID → passcode
  * 5. 用 passcode 查 zh-CN-cards.cdb 获取中文名/效果/数值数据
  *
- * 用法：npx tsx scripts/buildCardData.ts
+ * 用法：
+ *   npx tsx scripts/buildCardData.ts              # 构建 WC2009（默认）
+ *   npx tsx scripts/buildCardData.ts --game wc2008 # 构建 WC2008
+ *   npx tsx scripts/buildCardData.ts --game wc2009 # 构建 WC2009
  */
 
 import Database from "better-sqlite3";
@@ -66,22 +69,63 @@ interface CardData {
   nibbleIndex: number;
 }
 
+/** 游戏配置 */
+interface GameConfig {
+  label: string;
+  cidToNibbleFile: string;
+  outputFile: string;
+}
+
+// ============================================================
+// 游戏配置
+// ============================================================
+
+const GAME_CONFIGS: Record<string, GameConfig> = {
+  wc2009: {
+    label: "WC2009",
+    cidToNibbleFile: "cid_to_nibble.json",
+    outputFile: "cards.json",
+  },
+  wc2008: {
+    label: "WC2008",
+    cidToNibbleFile: "cid_to_nibble_wc2008.json",
+    outputFile: "cards-wc2008.json",
+  },
+};
+
 // ============================================================
 // 路径常量
 // ============================================================
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "..");
 const REF_DATA_DIR = path.join(PROJECT_ROOT, "reference-data");
-const OUTPUT_PATH = path.join(PROJECT_ROOT, "public", "cards.json");
 
 const CDB_PATH = path.join(REF_DATA_DIR, "zh-CN-cards.cdb");
-const CID_TO_NIBBLE_PATH = path.join(REF_DATA_DIR, "cid_to_nibble.json");
 const KONAMI_DB_PATH = path.join(REF_DATA_DIR, "konami_card_db.json");
 const PW_TO_NAME_PATH = path.join(REF_DATA_DIR, "pw_to_name.json");
 
 // ============================================================
 // 辅助函数
 // ============================================================
+
+/**
+ * 解析命令行参数，返回游戏标识。
+ *
+ * @returns 游戏标识（wc2008 或 wc2009）
+ */
+function parseGameArg(): string {
+  const args = process.argv.slice(2);
+  const gameIdx = args.indexOf("--game");
+  if (gameIdx !== -1 && args[gameIdx + 1]) {
+    const game = args[gameIdx + 1].toLowerCase();
+    if (!(game in GAME_CONFIGS)) {
+      console.error(`不支持的游戏: ${game}，可选: ${Object.keys(GAME_CONFIGS).join(", ")}`);
+      process.exit(1);
+    }
+    return game;
+  }
+  return "wc2009"; // 默认
+}
 
 /**
  * 从 CDB 的 level 字段提取真实等级。
@@ -110,12 +154,18 @@ function readJson<T>(filePath: string): T {
 // ============================================================
 
 function main(): void {
-  console.log("=== WC2009 卡片数据构建 ===\n");
+  const gameKey = parseGameArg();
+  const config = GAME_CONFIGS[gameKey];
 
-  // 1. 读取 CID → nibble 映射（WC2009 卡池）
-  const cidToNibble: Record<string, number> = readJson(CID_TO_NIBBLE_PATH);
+  const cidToNibblePath = path.join(REF_DATA_DIR, config.cidToNibbleFile);
+  const outputPath = path.join(PROJECT_ROOT, "public", config.outputFile);
+
+  console.log(`=== ${config.label} 卡片数据构建 ===\n`);
+
+  // 1. 读取 CID → nibble 映射
+  const cidToNibble: Record<string, number> = readJson(cidToNibblePath);
   const cidList = Object.keys(cidToNibble);
-  console.log(`WC2009 卡池数量: ${cidList.length}`);
+  console.log(`${config.label} 卡池数量: ${cidList.length}`);
 
   // 2. 读取 Konami 卡片数据库（CID → 英文名等）
   const konamiDb: Record<string, KonamiCardEntry> = readJson(KONAMI_DB_PATH);
@@ -209,9 +259,9 @@ function main(): void {
   console.log(`  总计: ${successCount + mappingMissCount + cdbMissCount} / ${cidList.length}`);
 
   // 7. 写入输出文件
-  fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(result, null, 2), "utf-8");
-  console.log(`\n已写入: ${OUTPUT_PATH}`);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, JSON.stringify(result, null, 2), "utf-8");
+  console.log(`\n已写入: ${outputPath}`);
 
   // 8. 抽查几张卡
   const sampleCids = cidList.slice(0, 5);

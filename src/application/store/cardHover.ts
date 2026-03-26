@@ -23,7 +23,7 @@ export interface CardDisplayInfo {
 	inWc2009: boolean;
 }
 
-/** 额外卡片数据（不在 WC2009 卡池中的卡） */
+/** 额外卡片数据（不在当前版本卡池中的卡） */
 interface ExtraCardRaw {
 	n: string; d: string; t: number; a: number; f: number;
 	l: number; r: number; b: number;
@@ -79,7 +79,7 @@ export const useCardHoverStore = defineStore("cardHover", {
 
 			const pc = String(id);
 
-			// 先查 WC2009 数据库
+			// 先查当前版本数据库
 			const card = cardDatabase.getByPasscode(pc);
 			if (card) {
 				this.info = buildInfo(card.name, card.desc, card.type, card.atk, card.def, card.level, card.race, card.attribute, pc, true);

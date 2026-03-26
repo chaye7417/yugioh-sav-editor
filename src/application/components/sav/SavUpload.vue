@@ -1,7 +1,7 @@
 <template>
 	<div class="sav-upload">
 		<div class="sav-upload__container">
-			<h1 class="sav-upload__title">游戏王 WC2009 存档编辑器</h1>
+			<h1 class="sav-upload__title">游戏王 NDS 存档编辑器</h1>
 			<p class="sav-upload__subtitle">
 				可视化编辑预制卡组、背包和 DP
 			</p>
@@ -32,7 +32,7 @@
 						拖拽 .sav 文件到此处，或点击选择文件
 					</p>
 					<p class="sav-upload__hint">
-						支持 WC2009 存档
+						支持 WC2008 和 WC2009 存档
 					</p>
 				</div>
 			</div>

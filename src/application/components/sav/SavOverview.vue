@@ -13,11 +13,11 @@
 					</tr>
 					<tr>
 						<td class="sav-overview__label">文件大小</td>
-						<td>64 KB</td>
+						<td>{{ fileSizeText }}</td>
 					</tr>
 					<tr>
 						<td class="sav-overview__label">游戏版本</td>
-						<td>WC2009 (Yu-Gi-Oh! 5D's Stardust Accelerator)</td>
+						<td>{{ savStore.gameShortName }} ({{ savStore.gameDisplayName }})</td>
 					</tr>
 				</tbody>
 			</table>
@@ -29,7 +29,7 @@
 			<div class="sav-overview__stat-row">
 				<span class="sav-overview__stat-label">已用槽位</span>
 				<span class="sav-overview__stat-value">
-					{{ savStore.usedSlotCount }} / 50
+					{{ savStore.usedSlotCount }} / {{ savStore.recipeSlotCount }}
 				</span>
 			</div>
 			<div class="sav-overview__progress-bar">
@@ -144,8 +144,14 @@ export default defineComponent({
 		const savStore = useSavStore();
 
 		const slotPercent = computed(() =>
-			Math.round((savStore.usedSlotCount / 50) * 100)
+			Math.round((savStore.usedSlotCount / savStore.recipeSlotCount) * 100)
 		);
+
+		const fileSizeText = computed(() => {
+			if (!savStore.saveData) return "0 KB";
+			const bytes = savStore.saveData.rawBuffer.byteLength;
+			return `${Math.round(bytes / 1024)} KB`;
+		});
 
 		const totalCardCount = computed(() => cardDatabase.size || 2807);
 
@@ -194,6 +200,7 @@ export default defineComponent({
 		return {
 			savStore,
 			slotPercent,
+			fileSizeText,
 			totalCardCount,
 			collectionPercent,
 			dpFormatted,

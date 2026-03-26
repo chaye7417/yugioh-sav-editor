@@ -1,13 +1,13 @@
 /**
  * 存档状态管理 (Pinia Store)。
  *
- * 管理 WC2009 .sav 文件的加载、编辑和下载。
+ * 管理 WC2008/WC2009 .sav 文件的加载、编辑和下载。
  */
 
 import { defineStore } from "pinia";
 import type { SaveData, CrgyRecipe, ActiveDeck } from "@/core/sav";
 import { parseSav, writeSav, setCardCount, getCardCount, setAllCards, readTrunk, getTrunkStats } from "@/core/sav";
-import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
+import { cardDatabase, reloadForVersion, type CardEntry } from "@/data/cardDatabase";
 
 /** 当前激活的面板 */
 export type ActivePanel = "overview" | "activeDeck" | "recipe" | "collection" | "dp" | "formatLibrary";
@@ -46,6 +46,28 @@ export const useSavStore = defineStore("sav", {
 		/** 存档是否已加载 */
 		isLoaded: (state): boolean => state.saveData !== null,
 
+		/** 当前游戏版本标识 */
+		gameVersion(state): string {
+			return state.saveData?.profile?.version ?? "wc2009";
+		},
+
+		/** 当前游戏显示名称 */
+		gameDisplayName(state): string {
+			return state.saveData?.profile?.displayName ?? "WC2009";
+		},
+
+		/** 当前游戏版本的短名称 (如 "WC2009"、"WC2008") */
+		gameShortName(state): string {
+			const ver = state.saveData?.profile?.version;
+			if (ver === "wc2008") return "WC2008";
+			return "WC2009";
+		},
+
+		/** 预制卡组槽位总数 (从 profile 获取) */
+		recipeSlotCount(state): number {
+			return state.saveData?.profile?.crgySlotCount ?? 50;
+		},
+
 		/** 当前选中槽位的卡组 */
 		activeRecipe(state): CrgyRecipe | null {
 			if (!state.saveData) return null;
@@ -80,6 +102,11 @@ export const useSavStore = defineStore("sav", {
 		async loadSav(file: File): Promise<void> {
 			const buffer = await file.arrayBuffer();
 			const saveData = parseSav(buffer);
+
+			// 根据检测到的游戏版本重新加载对应的卡片数据库
+			const version = saveData.profile?.version ?? "wc2009";
+			await reloadForVersion(version);
+
 			this.fileName = file.name;
 			this.originalBuffer = buffer;
 			this.saveData = saveData;

@@ -4,42 +4,31 @@
  * 将修改后的 SaveData 写回 ArrayBuffer，包括:
  * - LZ10 重新压缩 gamedata
  * - 更新 CRC32
- * - 同步备份 TDGY 块
+ * - 同步所有 TDGY 块
  * - 更新 CRGY 预制卡组
+ *
+ * 通过 GameProfile 适配 WC2008 和 WC2009 的存档格式差异。
  */
 
 import type { SaveData } from "./types";
+import type { GameProfile } from "./gameProfiles";
 import {
-  SAV_SIZE,
-  TDGY_OFFSET,
-  TDGY_BACKUP_OFFSET,
-  TDGY_SIZE,
   TDGY_DATALEN_OFFSET,
   TDGY_CRC32_OFFSET,
   TDGY_GAMEDATA_OFFSET,
-  GD_DP,
-  CRGY_SLOT_COUNT,
-  CRGY_SLOT_OFFSETS,
-  CRGY_SIZE,
   CRGY_MAGIC,
-  CRGY_FLAG_OFFSET,
-  CRGY_NAME_OFFSET,
-  CRGY_NAME_SIZE,
-  CRGY_MAIN_COUNT_OFFSET,
-  CRGY_SIDE_COUNT_OFFSET,
-  CRGY_EXTRA_COUNT_OFFSET,
-  CRGY_CARDS_OFFSET,
-  CRGY_MAIN_MAX,
-  CRGY_SIDE_MAX,
-  CRGY_EXTRA_MAX,
-  CRGY_SIDE_START,
-  CRGY_EXTRA_START,
-  CRGY_MAX_CARDS,
   CRGY_CRC32_OFFSET,
 } from "./constants";
 import { compress, decompress } from "./lz10";
 import { crc32 } from "./crc32";
 import { writeActiveDeck } from "./activeDeckEditor";
+
+/** CRGY 标志位偏移 (相对槽位起始) */
+const CRGY_FLAG_OFFSET = 0x08;
+/** 副卡组最大数量 */
+const SIDE_MAX = 15;
+/** 额外卡组最大数量 */
+const EXTRA_MAX = 15;
 
 /**
  * 将修改后的 TDGY gamedata 写回 .sav 的一个 TDGY 块。
@@ -79,27 +68,29 @@ function writeTdgyBlock(
  * @param sav - 可变 .sav 数据
  * @param slotOffset - 槽位偏移
  * @param recipe - 卡组数据
+ * @param profile - 游戏版本配置
  */
 function writeCrgySlot(
   sav: Uint8Array,
   slotOffset: number,
   recipe: { name: string; mainCids: number[]; sideCids: number[]; extraCids: number[] },
+  profile: GameProfile,
 ): void {
   const view = new DataView(sav.buffer, sav.byteOffset, sav.byteLength);
 
-  // 空卡组: 清零整个槽位并返回
+  // 空卡组: 用填充字节清零整个槽位并返回
   if (
     recipe.name === "" &&
     recipe.mainCids.length === 0 &&
     recipe.sideCids.length === 0 &&
     recipe.extraCids.length === 0
   ) {
-    sav.fill(0, slotOffset, slotOffset + CRGY_SIZE);
+    sav.fill(profile.crgyPadByte, slotOffset, slotOffset + profile.crgySlotSize);
     return;
   }
 
-  // 清空槽位 (保留前4字节之后的区域)
-  sav.fill(0, slotOffset + 4, slotOffset + CRGY_SIZE);
+  // 用填充字节清空槽位 (保留前4字节之后的区域)
+  sav.fill(profile.crgyPadByte, slotOffset + 4, slotOffset + profile.crgySlotSize);
 
   // 写入 CRGY 魔数
   sav.set(CRGY_MAGIC, slotOffset);
@@ -110,33 +101,46 @@ function writeCrgySlot(
   // 卡组名 (ASCII)
   const encoder = new TextEncoder();
   const nameBytes = encoder.encode(recipe.name);
-  const nameLen = Math.min(nameBytes.length, CRGY_NAME_SIZE - 1);
-  sav.set(nameBytes.subarray(0, nameLen), slotOffset + CRGY_NAME_OFFSET);
+  const nameLen = Math.min(nameBytes.length, profile.crgyNameSize - 1);
+  // 先清零名称区域
+  sav.fill(0, slotOffset + profile.crgyNameOffset, slotOffset + profile.crgyNameOffset + profile.crgyNameSize);
+  sav.set(nameBytes.subarray(0, nameLen), slotOffset + profile.crgyNameOffset);
 
   // 截断处理
-  const mainCids = recipe.mainCids.slice(0, CRGY_MAIN_MAX);
-  const sideCids = recipe.sideCids.slice(0, CRGY_SIDE_MAX);
-  const extraCids = recipe.extraCids.slice(0, CRGY_EXTRA_MAX);
+  const mainCids = recipe.mainCids.slice(0, profile.crgyMainMax);
+  const sideCids = recipe.sideCids.slice(0, SIDE_MAX);
+  const extraCids = recipe.extraCids.slice(0, EXTRA_MAX);
 
   // 数量
-  view.setUint16(slotOffset + CRGY_MAIN_COUNT_OFFSET, mainCids.length, true);
-  view.setUint16(slotOffset + CRGY_SIDE_COUNT_OFFSET, sideCids.length, true);
-  view.setUint16(slotOffset + CRGY_EXTRA_COUNT_OFFSET, extraCids.length, true);
+  const writeCount =
+    profile.crgyCountType === "uint16"
+      ? (offset: number, val: number) => view.setUint16(offset, val, true)
+      : (offset: number, val: number) => view.setUint32(offset, val, true);
 
-  // CID 数组
-  const cidBase = slotOffset + CRGY_CARDS_OFFSET;
+  writeCount(slotOffset + profile.crgyCountOffsets.main, mainCids.length);
+  writeCount(slotOffset + profile.crgyCountOffsets.side, sideCids.length);
+  writeCount(slotOffset + profile.crgyCountOffsets.extra, extraCids.length);
+
+  // CID 数组 (uint16 LE)
+  const mainCidBase = slotOffset + profile.crgyCidOffsets.main;
+  const sideCidBase = slotOffset + profile.crgyCidOffsets.side;
+  const extraCidBase = slotOffset + profile.crgyCidOffsets.extra;
+
   for (let i = 0; i < mainCids.length; i++) {
-    view.setUint16(cidBase + i * 2, mainCids[i], true);
+    view.setUint16(mainCidBase + i * 2, mainCids[i], true);
   }
   for (let i = 0; i < sideCids.length; i++) {
-    view.setUint16(cidBase + (CRGY_SIDE_START + i) * 2, sideCids[i], true);
+    view.setUint16(sideCidBase + i * 2, sideCids[i], true);
   }
   for (let i = 0; i < extraCids.length; i++) {
-    view.setUint16(cidBase + (CRGY_EXTRA_START + i) * 2, extraCids[i], true);
+    view.setUint16(extraCidBase + i * 2, extraCids[i], true);
   }
 
-  // 更新 CRC32 (从 flag_offset 到槽位结束)
-  const crcData = sav.subarray(slotOffset + 0x08, slotOffset + CRGY_SIZE);
+  // 更新 CRC32
+  const crcData = sav.subarray(
+    slotOffset + profile.crgyCrcStart,
+    slotOffset + profile.crgyCrcEnd,
+  );
   const crcVal = crc32(crcData);
   view.setUint32(slotOffset + CRGY_CRC32_OFFSET, crcVal, true);
 }
@@ -146,18 +150,21 @@ function writeCrgySlot(
  *
  * @param originalBuffer - 原始 .sav ArrayBuffer
  * @param saveData - 修改后的存档数据
- * @returns 新的 .sav ArrayBuffer (64KB)
+ * @returns 新的 .sav ArrayBuffer
  * @throws Error LZ10 roundtrip 验证失败
  */
 export function writeSav(
   originalBuffer: ArrayBuffer,
   saveData: SaveData,
 ): ArrayBuffer {
+  const profile = saveData.profile;
+
   // 复制原始数据（保留原始大小，兼容模拟器扩展的存档）
-  const originalSize = Math.max(originalBuffer.byteLength, SAV_SIZE);
+  const originalSize = Math.max(originalBuffer.byteLength, profile.savMinSize);
   const result = new ArrayBuffer(originalSize);
   const sav = new Uint8Array(result);
   sav.set(new Uint8Array(originalBuffer));
+
   const gdView = new DataView(
     saveData.gamedata.buffer,
     saveData.gamedata.byteOffset,
@@ -165,10 +172,10 @@ export function writeSav(
   );
 
   // 写入 DP 到 gamedata
-  gdView.setUint32(GD_DP, saveData.dp, true);
+  gdView.setUint32(profile.gdDp, saveData.dp, true);
 
   // 写入活动卡组到 gamedata
-  writeActiveDeck(saveData.gamedata, saveData.activeDeck);
+  writeActiveDeck(saveData.gamedata, saveData.activeDeck, profile);
 
   // LZ10 压缩 gamedata
   const compressed = compress(saveData.gamedata);
@@ -177,7 +184,7 @@ export function writeSav(
   const verify = decompress(compressed);
   if (verify.length !== saveData.gamedata.length) {
     throw new Error(
-      `LZ10 roundtrip 验证失败: 解压后大小 ${verify.length} != 原始 ${saveData.gamedata.length}`
+      `LZ10 roundtrip 验证失败: 解压后大小 ${verify.length} != 原始 ${saveData.gamedata.length}`,
     );
   }
   for (let i = 0; i < verify.length; i++) {
@@ -186,16 +193,15 @@ export function writeSav(
     }
   }
 
-  // 写入主 TDGY 块
-  writeTdgyBlock(sav, TDGY_OFFSET, compressed, saveData.tdgy.dataLen);
-
-  // 同步备份 TDGY 块 (直接复制主块)
-  const primaryBlock = sav.subarray(TDGY_OFFSET, TDGY_OFFSET + TDGY_SIZE);
-  sav.set(primaryBlock, TDGY_BACKUP_OFFSET);
+  // 写入所有 TDGY 块
+  for (const tdgyOffset of profile.tdgyOffsets) {
+    writeTdgyBlock(sav, tdgyOffset, compressed, saveData.tdgy.dataLen);
+  }
 
   // 写入 CRGY 预制卡组
-  for (let i = 0; i < CRGY_SLOT_COUNT; i++) {
-    writeCrgySlot(sav, CRGY_SLOT_OFFSETS[i], saveData.recipes[i]);
+  for (let i = 0; i < profile.crgySlotCount; i++) {
+    const slotOffset = profile.crgyBaseOffset + i * profile.crgySlotSize;
+    writeCrgySlot(sav, slotOffset, saveData.recipes[i], profile);
   }
 
   return result;

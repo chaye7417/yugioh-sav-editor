@@ -173,6 +173,15 @@ export class CardDatabase {
 /** 全局卡片数据库单例 */
 export const cardDatabase = new CardDatabase();
 
+/** 当前已加载的卡片数据库对应的版本 */
+let currentLoadedVersion: string = "wc2009";
+
+/** 版本 → 卡片数据 JSON URL 映射 */
+const VERSION_CARD_URL: Record<string, string> = {
+  wc2009: "/cards.json",
+  wc2008: "/cards-wc2008.json",
+};
+
 /**
  * 从网络加载 cards.json 并初始化数据库。
  * 适用于浏览器环境。
@@ -188,6 +197,28 @@ export async function loadCardDatabase(
   }
   const data: CardDataMap = await response.json();
   cardDatabase.load(data);
+}
+
+/**
+ * 根据游戏版本重新加载对应的卡片数据库。
+ * 如果当前已加载的版本与目标版本相同，则跳过。
+ *
+ * @param version - 游戏版本标识 ("wc2008" | "wc2009")
+ */
+export async function reloadForVersion(version: string): Promise<void> {
+  if (currentLoadedVersion === version && cardDatabase.isLoaded) return;
+  const url = VERSION_CARD_URL[version] ?? "/cards.json";
+  await loadCardDatabase(url);
+  currentLoadedVersion = version;
+}
+
+/**
+ * 获取当前已加载的卡片数据库版本。
+ *
+ * @returns 当前版本标识
+ */
+export function getCurrentCardDbVersion(): string {
+  return currentLoadedVersion;
 }
 
 // ============================================================

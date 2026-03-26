@@ -78,7 +78,7 @@
 						type="checkbox"
 						@change="applyFilter"
 					/>
-					只看 WC2009 完全兼容
+					只看 {{ gameShortName }} 完全兼容
 				</label>
 			</div>
 
@@ -122,7 +122,7 @@
 								'format-library__deck-compat--partial': !compatMap[deck.id].isFullyCompatible,
 							}"
 						>
-							WC2009: {{ compatMap[deck.id].compatibleCards }}/{{ compatMap[deck.id].totalCards }}
+							{{ gameShortName }}: {{ compatMap[deck.id].compatibleCards }}/{{ compatMap[deck.id].totalCards }}
 							<template v-if="compatMap[deck.id].isFullyCompatible">&#x2705;</template>
 							<template v-else>
 								&#x26A0;&#xFE0F; ({{ compatMap[deck.id].incompatibleCards.length }}张不在卡池)
@@ -177,7 +177,7 @@
 								class="format-library__card-cell"
 								:class="{ 'format-library__card-cell--incompatible': !isCardCompatible(card.artworkId) }"
 								@mouseenter="onCardHover(card.artworkId)"
-								:title="isCardCompatible(card.artworkId) ? '' : '不在 WC2009 卡池'"
+								:title="isCardCompatible(card.artworkId) ? '' : `不在 ${gameShortName} 卡池`"
 							>
 								<img
 									:src="cardImgUrl(card.artworkId)"
@@ -372,6 +372,9 @@ export default defineComponent({
 	computed: {
 		savStore() {
 			return useSavStore();
+		},
+		gameShortName(): string {
+			return this.savStore.gameShortName;
 		},
 		currentCompat(): CompatResult | null {
 			if (!this.selectedDeckId) return null;
@@ -578,19 +581,20 @@ export default defineComponent({
 			const { realMain, extraFromMain } = this.splitMainExtra(mainCids);
 			const finalExtra = [...extraCids, ...extraFromMain];
 
+			const mainMax = this.savStore.saveData?.profile?.gdDeckMainMax ?? 60;
 			this.savStore.updateActiveDeck({
 				name: this.currentDetail.deckTypeName || this.currentDetail.name || "Imported",
 				mainCount: realMain.length,
 				sideCount: sideCids.length,
 				extraCount: finalExtra.length,
-				mainCids: realMain.slice(0, 60),
+				mainCids: realMain.slice(0, mainMax),
 				sideCids: sideCids.slice(0, 15),
 				extraCids: finalExtra.slice(0, 15),
 			});
 
 			const totalSkipped = ms + es + ss;
 			alert(totalSkipped > 0
-				? `已导入到活动卡组。跳过了 ${totalSkipped} 张不在 WC2009 卡池的卡。`
+				? `已导入到活动卡组。跳过了 ${totalSkipped} 张不在 ${this.gameShortName} 卡池的卡。`
 				: "已导入到活动卡组。");
 		},
 
@@ -605,16 +609,18 @@ export default defineComponent({
 			const finalExtra = [...extraCids, ...extraFromMain];
 			const slot = this.savStore.activeRecipeSlot;
 
+			const recipeMainMax = this.savStore.saveData?.profile?.crgyMainMax ?? 60;
+			const nameMax = this.savStore.saveData?.profile?.crgyNameSize ?? 23;
 			this.savStore.updateRecipe(slot, {
-				name: (this.currentDetail.deckTypeName || this.currentDetail.name || "Imported").slice(0, 22),
-				mainCids: realMain.slice(0, 60),
+				name: (this.currentDetail.deckTypeName || this.currentDetail.name || "Imported").slice(0, nameMax - 1),
+				mainCids: realMain.slice(0, recipeMainMax),
 				sideCids: sideCids.slice(0, 15),
 				extraCids: finalExtra.slice(0, 15),
 			});
 
 			const totalSkipped = ms + es + ss;
 			alert(totalSkipped > 0
-				? `已导入到预制卡组 #${slot + 1}。跳过了 ${totalSkipped} 张不在 WC2009 卡池的卡。`
+				? `已导入到预制卡组 #${slot + 1}。跳过了 ${totalSkipped} 张不在 ${this.gameShortName} 卡池的卡。`
 				: `已导入到预制卡组 #${slot + 1}。`);
 		},
 	},

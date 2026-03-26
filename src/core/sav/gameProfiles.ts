@@ -1,0 +1,174 @@
+/**
+ * 游戏版本配置系统。
+ *
+ * 定义 WC2008 和 WC2009 的存档格式差异，
+ * 让存档引擎通过 GameProfile 适配不同版本。
+ */
+
+// ── 类型定义 ────────────────────────────────────────────────
+
+/** 支持的游戏版本 */
+export type GameVersion = "wc2008" | "wc2009";
+
+/** 游戏版本配置 */
+export interface GameProfile {
+  /** 版本标识 */
+  version: GameVersion;
+  /** 显示名称 */
+  displayName: string;
+
+  // ── 存档文件 ──
+  /** 最小存档大小 (字节) */
+  savMinSize: number;
+
+  // ── TDGY ──
+  /** TDGY 块偏移列表 (主 + 备份) */
+  tdgyOffsets: number[];
+
+  // ── CRGY 预制卡组 ──
+  /** CRGY 块起始偏移 */
+  crgyBaseOffset: number;
+  /** 每个槽位字节数 */
+  crgySlotSize: number;
+  /** 槽位数量 */
+  crgySlotCount: number;
+  /** 卡组名偏移 (相对槽位起始) */
+  crgyNameOffset: number;
+  /** 卡组名最大长度 */
+  crgyNameSize: number;
+  /** 数量字段偏移 (相对槽位起始) */
+  crgyCountOffsets: { main: number; extra: number; side: number };
+  /** 数量字段类型 */
+  crgyCountType: "uint16" | "uint32";
+  /** CID 数组起始偏移 (相对槽位起始) */
+  crgyCidOffsets: { main: number; side: number; extra: number };
+  /** 主卡组最大数量 */
+  crgyMainMax: number;
+  /** CRC32 计算起始偏移 (相对槽位起始) */
+  crgyCrcStart: number;
+  /** CRC32 计算结束偏移 (相对槽位起始) */
+  crgyCrcEnd: number;
+  /** 空白填充字节 */
+  crgyPadByte: number;
+
+  // ── Gamedata ──
+  /** 解压后 gamedata 大小 */
+  gamedataDecompSize: number;
+  /** DP 偏移 (相对 gamedata 起始) */
+  gdDp: number;
+  /** 活动卡组标志位偏移 */
+  gdActiveDeckFlag: number;
+  /** 活动卡组名偏移 */
+  gdActiveDeckName: number;
+  /** 活动卡组名最大长度 */
+  gdActiveDeckNameSize: number;
+  /** 活动卡组数量字段偏移 */
+  gdDeckCounts: { main: number; extra: number; side: number };
+  /** 活动卡组主卡 CID 数组起始偏移 */
+  gdDeckMainCids: number;
+  /** 活动卡组主卡最大数量 */
+  gdDeckMainMax: number;
+  /** 半字节数组偏移 (卡片收藏) */
+  gdNibbleArray: number;
+}
+
+// ── WC2008 配置 ──────────────────────────────────────────────
+
+export const WC2008_PROFILE: GameProfile = {
+  version: "wc2008",
+  displayName: "Yu-Gi-Oh! World Championship 2008",
+
+  savMinSize: 0x40000,
+
+  tdgyOffsets: [0x28000, 0x2ab00, 0x2d600, 0x30100],
+
+  crgyBaseOffset: 0x10000,
+  crgySlotSize: 0x180,
+  crgySlotCount: 64,
+  crgyNameOffset: 0x09,
+  crgyNameSize: 39,
+  crgyCountOffsets: { main: 0x30, extra: 0x34, side: 0x38 },
+  crgyCountType: "uint32",
+  crgyCidOffsets: { main: 0x3c, side: 0xfa, extra: 0xdc },
+  crgyMainMax: 80,
+  crgyCrcStart: 0x08,
+  crgyCrcEnd: 0x138,
+  crgyPadByte: 0xff,
+
+  gamedataDecompSize: 0x26f0,
+  gdDp: 0x024,
+  gdActiveDeckFlag: 0x0a0,
+  gdActiveDeckName: 0x0a1,
+  gdActiveDeckNameSize: 39,
+  gdDeckCounts: { main: 0x0c8, extra: 0x0cc, side: 0x0d0 },
+  gdDeckMainCids: 0x0d4,
+  gdDeckMainMax: 80,
+  gdNibbleArray: 0x65a,
+};
+
+// ── WC2009 配置 ──────────────────────────────────────────────
+
+export const WC2009_PROFILE: GameProfile = {
+  version: "wc2009",
+  displayName: "Yu-Gi-Oh! World Championship 2009",
+
+  savMinSize: 0x10000,
+
+  tdgyOffsets: [0xb51c, 0xda8c],
+
+  crgyBaseOffset: 0x45a8,
+  crgySlotSize: 228,
+  crgySlotCount: 50,
+  crgyNameOffset: 0x09,
+  crgyNameSize: 23,
+  crgyCountOffsets: { main: 0x24, extra: 0x2c, side: 0x28 },
+  crgyCountType: "uint16",
+  crgyCidOffsets: { main: 0x30, side: 0xa8, extra: 0xc6 },
+  crgyMainMax: 60,
+  crgyCrcStart: 0x08,
+  crgyCrcEnd: 228,
+  crgyPadByte: 0x00,
+
+  gamedataDecompSize: 0x2550,
+  gdDp: 0x024,
+  gdActiveDeckFlag: 0xc0,
+  gdActiveDeckName: 0xc1,
+  gdActiveDeckNameSize: 23,
+  gdDeckCounts: { main: 0xdc, extra: 0xe4, side: 0xe0 },
+  gdDeckMainCids: 0xe8,
+  gdDeckMainMax: 60,
+  gdNibbleArray: 0xa4e,
+};
+
+// ── 全部配置 ─────────────────────────────────────────────────
+
+/** 所有支持的游戏配置 */
+export const GAME_PROFILES: Record<GameVersion, GameProfile> = {
+  wc2008: WC2008_PROFILE,
+  wc2009: WC2009_PROFILE,
+};
+
+// ── 版本检测 ─────────────────────────────────────────────────
+
+/**
+ * 根据存档文件大小自动检测游戏版本。
+ *
+ * @param buffer 存档文件的 ArrayBuffer
+ * @returns 匹配的 GameProfile
+ * @throws Error 如果文件大小不匹配任何已知版本
+ */
+export function detectGameVersion(buffer: ArrayBuffer): GameProfile {
+  const size = buffer.byteLength;
+
+  if (size >= WC2008_PROFILE.savMinSize) {
+    return WC2008_PROFILE;
+  }
+
+  if (size >= WC2009_PROFILE.savMinSize) {
+    return WC2009_PROFILE;
+  }
+
+  throw new Error(
+    `存档文件过小 (${size} bytes)，最小需要 ${WC2009_PROFILE.savMinSize} bytes (64KB)`,
+  );
+}

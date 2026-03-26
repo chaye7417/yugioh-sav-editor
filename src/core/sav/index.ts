@@ -1,7 +1,8 @@
 /**
- * WC2009 存档引擎。
+ * 存档引擎。
  *
  * 提供 .sav 文件的解析、编辑和写回功能。
+ * 支持 WC2008 和 WC2009 两个版本。
  */
 
 export type {
@@ -12,6 +13,14 @@ export type {
   CardCollection,
   ActiveDeck,
 } from "./types";
+
+export type { GameVersion, GameProfile } from "./gameProfiles";
+export {
+  WC2008_PROFILE,
+  WC2009_PROFILE,
+  GAME_PROFILES,
+  detectGameVersion,
+} from "./gameProfiles";
 
 export { parseSav } from "./savParser";
 export { writeSav } from "./savWriter";
