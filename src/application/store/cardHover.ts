@@ -36,7 +36,7 @@ async function ensureExtraCards(): Promise<void> {
 	if (extraLoaded) return;
 	extraLoaded = true;
 	try {
-		const resp = await fetch("/fl-extra-cards.json");
+		const resp = await fetch(`${import.meta.env.BASE_URL}fl-extra-cards.json`);
 		extraCards = await resp.json();
 	} catch { /* 静默失败 */ }
 }

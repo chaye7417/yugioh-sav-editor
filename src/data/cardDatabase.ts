@@ -177,10 +177,11 @@ export const cardDatabase = new CardDatabase();
 let currentLoadedVersion: string = "wc2009";
 
 /** 版本 → 卡片数据 JSON URL 映射 */
+const base = import.meta.env.BASE_URL;
 const VERSION_CARD_URL: Record<string, string> = {
-  wc2007: "/cards-wc2007.json",
-  wc2009: "/cards.json",
-  wc2008: "/cards-wc2008.json",
+  wc2007: `${base}cards-wc2007.json`,
+  wc2009: `${base}cards.json`,
+  wc2008: `${base}cards-wc2008.json`,
 };
 
 /**
@@ -190,7 +191,7 @@ const VERSION_CARD_URL: Record<string, string> = {
  * @param url - cards.json 的 URL，默认 "/cards.json"
  */
 export async function loadCardDatabase(
-  url: string = "/cards.json"
+  url: string = `${import.meta.env.BASE_URL}cards.json`
 ): Promise<void> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -208,7 +209,7 @@ export async function loadCardDatabase(
  */
 export async function reloadForVersion(version: string): Promise<void> {
   if (currentLoadedVersion === version && cardDatabase.isLoaded) return;
-  const url = VERSION_CARD_URL[version] ?? "/cards.json";
+  const url = VERSION_CARD_URL[version] ?? `${base}cards.json`;
   await loadCardDatabase(url);
   currentLoadedVersion = version;
 }
