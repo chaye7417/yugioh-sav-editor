@@ -68,12 +68,28 @@ Vite `base` 配置为 `/yugioh/`，部署在网站的 `/yugioh/` 子路径下。
 
 ## 架构
 
-- `src/core/sav/` — 存档解析、写入、CRC32、LZ10 压缩
-- `src/core/card/` — 卡片数据库、搜索、过滤、排序
-- `src/core/deck/` — 卡组管理、导入导出
-- `src/application/` — Vue 应用入口和组件
-- `src/data/` — 卡片数据加载
-- `src/tooltip/` — 卡片悬浮预览
+```
+src/
+├── core/
+│   ├── sav/          # 存档处理：解析、写入、CRC32、LZ10 压缩
+│   ├── card/         # 卡片系统：数据库、搜索、过滤、排序
+│   └── deck/         # 卡组管理：导入导出 YDK
+├── application/      # Vue 应用入口和 UI 组件
+├── data/             # 卡片数据加载（JSON）
+└── tooltip/          # 卡片悬浮预览
+```
+
+### 数据流
+
+```
+用户上传 .sav → savParser 解析（检测版本、解压 LZ10）
+  → 加载对应版本 cards.json → UI 展示卡组/收藏/配方
+  → 用户编辑 → savWriter 写回（压缩、CRC32）→ 下载 .sav
+```
+
+### 版本支持
+
+通过 `gameProfiles.ts` 配置不同版本的偏移量和参数，savParser 自动探测 TDGY 块位置来判断版本。
 
 ## 许可证
 
