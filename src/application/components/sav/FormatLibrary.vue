@@ -662,7 +662,7 @@ export default defineComponent({
 				const nameMax = this.savStore.saveData?.profile?.crgyNameSize ?? 23;
 
 				this.savStore.updateRecipe(slot, {
-					name: (translateDeckType(detail.deckTypeName) || detail.name || "Imported").slice(0, nameMax - 1),
+					name: (detail.deckTypeName || detail.name || "Imported").slice(0, nameMax - 1),
 					mainCids: realMain.slice(0, recipeMainMax),
 					sideCids: sideCids.slice(0, 15),
 					extraCids: finalExtra.slice(0, 15),
