@@ -19,8 +19,18 @@
       </p>
     </div>
 
+    <!-- 下载进度 -->
+    <div v-if="loading" class="nds-emulator__loading">
+      <div class="nds-emulator__icon">🎮</div>
+      <h2>正在下载 ROM...</h2>
+      <div class="nds-emulator__progress-bar">
+        <div class="nds-emulator__progress-fill" :style="{ width: progressPercent + '%' }"></div>
+      </div>
+      <p>{{ progressPercent }}% — {{ loadedMB }} / {{ totalMB }} MB</p>
+    </div>
+
     <!-- 模拟器容器 -->
-    <div v-show="started" id="emulator-container" class="nds-emulator__player"></div>
+    <div v-show="started && !loading" id="emulator-container" class="nds-emulator__player"></div>
   </div>
 </template>
 
@@ -37,21 +47,51 @@ export default defineComponent({
   },
   setup(props) {
     const started = ref(false);
+    const loading = ref(false);
+    const progressPercent = ref(0);
+    const loadedMB = ref("0");
+    const totalMB = ref("0");
     let romBlobUrl: string | null = null;
     let savBlobUrl: string | null = null;
 
     async function startEmulator(): Promise<void> {
       started.value = true;
+      loading.value = true;
 
-      // 加载 ROM
+      // 加载 ROM（带进度）
       const romUrl = `${import.meta.env.BASE_URL}rom/wc2009.nds`;
       const romResp = await fetch(romUrl);
       if (!romResp.ok) {
         alert("ROM 加载失败，请确认 ROM 文件已部署");
         started.value = false;
+        loading.value = false;
         return;
       }
-      const romBuffer = await romResp.arrayBuffer();
+
+      const contentLength = romResp.headers.get("Content-Length");
+      const total = contentLength ? parseInt(contentLength, 10) : 268435456;
+      totalMB.value = (total / 1024 / 1024).toFixed(0);
+
+      const reader = romResp.body!.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        progressPercent.value = Math.round((received / total) * 100);
+        loadedMB.value = (received / 1024 / 1024).toFixed(0);
+      }
+
+      const romBuffer = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        romBuffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+
       const romBlob = new Blob([romBuffer]);
       romBlobUrl = URL.createObjectURL(romBlob);
 
@@ -70,6 +110,8 @@ export default defineComponent({
         (window as any).EJS_gameSaveUrl = savBlobUrl;
       }
 
+      loading.value = false;
+
       // 加载 loader.js
       const script = document.createElement("script");
       script.src = "https://cdn.emulatorjs.org/stable/data/loader.js";
@@ -81,7 +123,7 @@ export default defineComponent({
       if (savBlobUrl) URL.revokeObjectURL(savBlobUrl);
     });
 
-    return { started, startEmulator };
+    return { started, loading, progressPercent, loadedMB, totalMB, startEmulator };
   },
 });
 </script>
@@ -93,7 +135,7 @@ export default defineComponent({
   flex-direction: column;
   background: #1a1a2e;
 
-  &__intro {
+  &__intro, &__loading {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -130,6 +172,22 @@ export default defineComponent({
     color: #888;
     font-size: 0.8rem !important;
     margin-top: 1rem !important;
+  }
+
+  &__progress-bar {
+    width: 320px;
+    height: 12px;
+    background: #333;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3f88c5, #4caf50);
+    border-radius: 6px;
+    transition: width 0.2s;
   }
 
   &__player {
