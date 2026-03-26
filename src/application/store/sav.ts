@@ -10,7 +10,7 @@ import { parseSav, writeSav, setCardCount, getCardCount, setAllCards, readTrunk,
 import { cardDatabase, reloadForVersion, type CardEntry } from "@/data/cardDatabase";
 
 /** 当前激活的面板 */
-export type ActivePanel = "overview" | "activeDeck" | "recipe" | "collection" | "dp" | "formatLibrary" | "emulator";
+export type ActivePanel = "overview" | "activeDeck" | "recipe" | "collection" | "dp" | "formatLibrary";
 
 interface SavState {
 	/** 上传的文件名 */

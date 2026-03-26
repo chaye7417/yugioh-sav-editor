@@ -38,6 +38,3 @@ dist/
 coverage/
 
 .local
-
-# ROM files (too large for git)
-public/rom/*.nds
