@@ -98,7 +98,7 @@
 						:disabled="!savStore.isLoaded"
 						@click="batchImportToRecipes"
 					>
-						批量导入到预制卡组（从 #{{ savStore.activeRecipeSlot + 1 }} 开始）
+						批量导入到预制卡组（从 #{{ importSlot + 1 }} 开始）
 					</button>
 					<button class="btn btn-sm btn-outline-secondary" @click="checkedIds = []">
 						取消
@@ -275,12 +275,24 @@
 					>
 						导入到活动卡组
 					</button>
+					<select
+						v-model.number="importSlot"
+						class="form-control form-control-sm format-library__slot-select"
+					>
+						<option
+							v-for="i in recipeSlotCount"
+							:key="i - 1"
+							:value="i - 1"
+						>
+							#{{ i }}
+						</option>
+					</select>
 					<button
 						class="btn btn-sm btn-outline-primary"
 						:disabled="!savStore.isLoaded"
 						@click="importToRecipe"
 					>
-						导入到预制卡组 #{{ savStore.activeRecipeSlot + 1 }}
+						导入到预制卡组
 					</button>
 				</div>
 			</template>
@@ -398,6 +410,7 @@ export default defineComponent({
 			currentDetail: null as DeckDetail | null,
 			compatMap: {} as Record<number, CompatResult>,
 			checkedIds: [] as number[],
+			importSlot: 0,
 		};
 	},
 
@@ -407,6 +420,9 @@ export default defineComponent({
 		},
 		gameShortName(): string {
 			return this.savStore.gameShortName;
+		},
+		recipeSlotCount(): number {
+			return this.savStore.saveData?.profile?.crgySlotCount ?? 50;
 		},
 		currentCompat(): CompatResult | null {
 			if (!this.selectedDeckId) return null;
@@ -663,7 +679,7 @@ export default defineComponent({
 			if (!this.savStore.isLoaded || this.checkedIds.length === 0) return;
 
 			const slotCount = this.savStore.saveData?.profile?.crgySlotCount ?? 50;
-			const startSlot = this.savStore.activeRecipeSlot;
+			const startSlot = this.importSlot;
 			const available = slotCount - startSlot;
 
 			if (this.checkedIds.length > available) {
@@ -703,6 +719,8 @@ export default defineComponent({
 			}
 
 			this.checkedIds = [];
+			// 批量导入后跳到下一个空槽位
+			this.importSlot = Math.min(startSlot + imported, this.recipeSlotCount - 1);
 			alert(totalSkipped > 0
 				? `已批量导入 ${imported} 个卡组到预制卡组 #${startSlot + 1} ~ #${startSlot + imported}。共跳过 ${totalSkipped} 张不兼容的卡。`
 				: `已批量导入 ${imported} 个卡组到预制卡组 #${startSlot + 1} ~ #${startSlot + imported}。`);
@@ -717,7 +735,7 @@ export default defineComponent({
 
 			const { realMain, extraFromMain } = this.splitMainExtra(mainCids);
 			const finalExtra = [...extraCids, ...extraFromMain];
-			const slot = this.savStore.activeRecipeSlot;
+			const slot = this.importSlot;
 
 			const recipeMainMax = this.savStore.saveData?.profile?.crgyMainMax ?? 60;
 			const nameMax = this.savStore.saveData?.profile?.crgyNameSize ?? 23;
@@ -729,6 +747,10 @@ export default defineComponent({
 			});
 
 			const totalSkipped = ms + es + ss;
+			// 导入后自动跳到下一个槽位
+			if (this.importSlot < this.recipeSlotCount - 1) {
+				this.importSlot++;
+			}
 			alert(totalSkipped > 0
 				? `已导入到预制卡组 #${slot + 1}。跳过了 ${totalSkipped} 张不在 ${this.gameShortName} 卡池的卡。`
 				: `已导入到预制卡组 #${slot + 1}。`);
@@ -1025,9 +1047,16 @@ export default defineComponent({
 
 	&__import-actions {
 		display: flex;
+		align-items: center;
 		gap: 0.5rem;
 		margin-top: 0.75rem;
 		flex-shrink: 0;
+	}
+
+	&__slot-select {
+		width: 70px;
+		font-size: 0.75rem;
+		padding: 0.2rem 0.3rem;
 	}
 
 	// ============================
