@@ -10,6 +10,15 @@
 			<!-- 筛选区 -->
 			<div class="format-library__filters">
 				<div class="format-library__filter-row">
+					<input
+						v-model="searchCardName"
+						type="text"
+						class="form-control form-control-sm"
+						placeholder="搜索卡片名（如：巨大老鼠）"
+						@input="applyFilter"
+					/>
+				</div>
+				<div class="format-library__filter-row">
 					<select
 						v-model="selectedFormat"
 						class="form-control form-control-sm format-library__select"
@@ -378,6 +387,7 @@ export default defineComponent({
 			selectedPlacement: 0,
 			selectedSort: "rating:DESC",
 			onlyCompatible: false,
+			searchCardName: "",
 
 			pageItems: [] as Array<{ id: number; t: string; tZh: string; b: string; f: string; fZh: string; p: number | null; r: number; dl: number }>,
 			pageEnd: 0,
@@ -438,6 +448,26 @@ export default defineComponent({
 				if (this.selectedEra) {
 					const targetYear = Number(this.selectedEra);
 					result = result.filter((d) => formatYearMap[d.f] === targetYear);
+				}
+
+				// 卡片名搜索
+				if (this.searchCardName.trim()) {
+					const keyword = this.searchCardName.trim().toLowerCase();
+					// 找到所有名字匹配的卡片 passcode
+					const matchingPasscodes = new Set<number>();
+					for (const [, entry] of cardDatabase.getAllEntries()) {
+						if (entry.name.toLowerCase().includes(keyword)) {
+							matchingPasscodes.add(Number(entry.passcode));
+						}
+					}
+					if (matchingPasscodes.size > 0) {
+						result = result.filter((d) => {
+							const allCards = [...d.m, ...d.x, ...d.s];
+							return allCards.some((c) => matchingPasscodes.has(Number(c)));
+						});
+					} else {
+						result = [];
+					}
 				}
 
 				if (this.onlyCompatible) {
