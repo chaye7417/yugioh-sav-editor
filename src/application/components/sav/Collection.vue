@@ -48,7 +48,7 @@
 				:key="item.cid"
 				class="collection__card"
 			>
-				<div class="collection__card-img-wrap">
+				<div class="collection__card-img-wrap" @mouseenter="onHover(item.card.passcode)">
 					<img
 						:src="getCardImageUrl(item.card.passcode)"
 						:alt="item.card.name"
@@ -105,6 +105,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from "vue";
 import { useSavStore } from "@/application/store/sav";
+import { useCardHoverStore } from "@/application/store/cardHover";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
 import { getCardCount } from "@/core/sav";
 
@@ -209,6 +210,11 @@ export default defineComponent({
 			return `${CARD_IMG_BASE}${passcode}.jpg`;
 		}
 
+		const cardHoverStore = useCardHoverStore();
+		function onHover(passcode: string): void {
+			cardHoverStore.hover(Number(passcode));
+		}
+
 		function incrementCard(cid: number): void {
 			const item = allCards.value.find((c) => c.cid === cid);
 			if (!item || item.count >= 9) return;
@@ -239,6 +245,7 @@ export default defineComponent({
 			scrollContainer,
 			onScroll,
 			getCardImageUrl,
+			onHover,
 			incrementCard,
 			decrementCard,
 			showAllCards,

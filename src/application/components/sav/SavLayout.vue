@@ -88,6 +88,9 @@
 					<DpEditor v-else-if="savStore.activePanel === 'dp'" />
 					<FormatLibrary v-else-if="savStore.activePanel === 'formatLibrary'" />
 				</main>
+
+				<!-- 卡片详情面板（常驻） -->
+				<CardInfoPanel />
 			</div>
 
 			<input
@@ -112,6 +115,7 @@ import ActiveDeckEditor from "./ActiveDeckEditor.vue";
 import Collection from "./Collection.vue";
 import DpEditor from "./DpEditor.vue";
 import FormatLibrary from "./FormatLibrary.vue";
+import CardInfoPanel from "./CardInfoPanel.vue";
 
 export default defineComponent({
 	name: "SavLayout",
@@ -124,6 +128,7 @@ export default defineComponent({
 		Collection,
 		DpEditor,
 		FormatLibrary,
+		CardInfoPanel,
 	},
 	setup() {
 		const savStore = useSavStore();

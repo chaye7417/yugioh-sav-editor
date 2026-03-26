@@ -93,6 +93,7 @@
 							:src="getCardImageUrl(item.card.passcode)"
 							:alt="item.card.name"
 							class="recipe-editor__card-img recipe-editor__card-img--small"
+							@mouseenter="onHover(item.card.passcode)"
 							loading="lazy"
 						/>
 						<span class="recipe-editor__card-name-overlay">
@@ -138,6 +139,7 @@
 								:src="getCardImageUrl(item.card.passcode)"
 								:alt="item.card.name"
 								class="recipe-editor__card-img recipe-editor__card-img--medium"
+								@mouseenter="onHover(item.card.passcode)"
 								loading="lazy"
 							/>
 						</div>
@@ -175,6 +177,7 @@
 								:src="getCardImageUrl(item.card.passcode)"
 								:alt="item.card.name"
 								class="recipe-editor__card-img recipe-editor__card-img--medium"
+								@mouseenter="onHover(item.card.passcode)"
 								loading="lazy"
 							/>
 						</div>
@@ -212,6 +215,7 @@
 								:src="getCardImageUrl(item.card.passcode)"
 								:alt="item.card.name"
 								class="recipe-editor__card-img recipe-editor__card-img--medium"
+								@mouseenter="onHover(item.card.passcode)"
 								loading="lazy"
 							/>
 						</div>
@@ -232,6 +236,7 @@
 import { computed, defineComponent, ref } from "vue";
 import draggable from "vuedraggable";
 import { useSavStore } from "@/application/store/sav";
+import { useCardHoverStore } from "@/application/store/cardHover";
 import { cardDatabase, type CardEntry } from "@/data/cardDatabase";
 import type { ActiveDeck } from "@/core/sav";
 import {
@@ -355,6 +360,11 @@ export default defineComponent({
 
 		function getCardImageUrl(passcode: string): string {
 			return `${CARD_IMG_BASE}${passcode}.jpg`;
+		}
+
+		const cardHoverStore = useCardHoverStore();
+		function onHover(passcode: string): void {
+			cardHoverStore.hover(Number(passcode));
 		}
 
 		function buildTooltip(card: CardEntry): string {
@@ -638,6 +648,7 @@ export default defineComponent({
 			extraDeckItems,
 			sideDeckItems,
 			getCardImageUrl,
+			onHover,
 			buildTooltip,
 			cloneSearchItem,
 			addCard,

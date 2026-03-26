@@ -162,6 +162,7 @@
 								:key="'m' + idx"
 								class="format-library__card-cell"
 								:class="{ 'format-library__card-cell--incompatible': !isCardCompatible(card.artworkId) }"
+								@mouseenter="onCardHover(card.artworkId)"
 								:title="isCardCompatible(card.artworkId) ? '' : '不在 WC2009 卡池'"
 							>
 								<img
@@ -185,6 +186,7 @@
 								:key="'x' + idx"
 								class="format-library__card-cell"
 								:class="{ 'format-library__card-cell--incompatible': !isCardCompatible(card.artworkId) }"
+								@mouseenter="onCardHover(card.artworkId)"
 							>
 								<img
 									:src="cardImgUrl(card.artworkId)"
@@ -207,6 +209,7 @@
 								:key="'s' + idx"
 								class="format-library__card-cell"
 								:class="{ 'format-library__card-cell--incompatible': !isCardCompatible(card.artworkId) }"
+								@mouseenter="onCardHover(card.artworkId)"
 							>
 								<img
 									:src="cardImgUrl(card.artworkId)"
@@ -238,6 +241,7 @@
 				</div>
 			</template>
 		</div>
+
 	</div>
 </template>
 
@@ -245,6 +249,7 @@
 import { defineComponent } from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase } from "@/data/cardDatabase";
+import { useCardHoverStore } from "@/application/store/cardHover";
 import {
 	filterAndSort,
 	expandDeck,
@@ -269,6 +274,7 @@ let rawDecks: SlimDeck[] = [];
 let filteredDecks: SlimDeck[] = [];
 const compatCache: Record<number, CompatResult> = {};
 let dataReady = false;
+
 
 function ensureData(): void {
 	if (dataReady) return;
@@ -481,6 +487,11 @@ export default defineComponent({
 
 		isCardCompatible(artworkId: number): boolean {
 			return cardDatabase.getCidByPasscode(String(artworkId)) !== undefined;
+		},
+
+		/** 鼠标悬停卡片时通知全局 store */
+		onCardHover(artworkId: number): void {
+			useCardHoverStore().hover(artworkId);
 		},
 
 		convertToCids(cards: { name: string; artworkId: number }[]): [number[], number] {
