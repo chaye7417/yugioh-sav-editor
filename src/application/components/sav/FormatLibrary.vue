@@ -80,6 +80,21 @@
 					/>
 					只看 {{ gameShortName }} 完全兼容
 				</label>
+
+				<!-- 批量导入 -->
+				<div v-if="checkedIds.length > 0" class="format-library__batch-bar">
+					<span>已选 {{ checkedIds.length }} 个卡组</span>
+					<button
+						class="btn btn-sm btn-primary"
+						:disabled="!savStore.isLoaded"
+						@click="batchImportToRecipes"
+					>
+						批量导入到预制卡组（从 #{{ savStore.activeRecipeSlot + 1 }} 开始）
+					</button>
+					<button class="btn btn-sm btn-outline-secondary" @click="checkedIds = []">
+						取消
+					</button>
+				</div>
 			</div>
 
 			<!-- 卡组列表 -->
@@ -101,6 +116,12 @@
 						@click="selectDeck(deck.id)"
 					>
 						<div class="format-library__deck-row1">
+							<input
+								type="checkbox"
+								:checked="checkedIds.includes(deck.id)"
+								@click.stop="toggleCheck(deck.id)"
+								class="format-library__deck-check"
+							/>
 							<span class="format-library__deck-type">{{ deck.tZh || deck.t || '未知类型' }}</span>
 							<span class="format-library__deck-format">{{ deck.fZh || deck.f }}</span>
 							<span v-if="deck.p" class="format-library__deck-placement">
@@ -366,6 +387,7 @@ export default defineComponent({
 			selectedDeckId: null as number | null,
 			currentDetail: null as DeckDetail | null,
 			compatMap: {} as Record<number, CompatResult>,
+			checkedIds: [] as number[],
 		};
 	},
 
@@ -598,6 +620,64 @@ export default defineComponent({
 				: "已导入到活动卡组。");
 		},
 
+		toggleCheck(deckId: number): void {
+			const idx = this.checkedIds.indexOf(deckId);
+			if (idx >= 0) {
+				this.checkedIds.splice(idx, 1);
+			} else {
+				this.checkedIds.push(deckId);
+			}
+		},
+
+		batchImportToRecipes(): void {
+			if (!this.savStore.isLoaded || this.checkedIds.length === 0) return;
+
+			const slotCount = this.savStore.saveData?.profile?.crgySlotCount ?? 50;
+			const startSlot = this.savStore.activeRecipeSlot;
+			const available = slotCount - startSlot;
+
+			if (this.checkedIds.length > available) {
+				alert(`从槽位 #${startSlot + 1} 开始只剩 ${available} 个空位，但选了 ${this.checkedIds.length} 个卡组。`);
+				return;
+			}
+
+			let imported = 0;
+			let totalSkipped = 0;
+
+			for (let i = 0; i < this.checkedIds.length; i++) {
+				const deckId = this.checkedIds[i];
+				const slim = rawDecks.find((d) => d.id === deckId);
+				if (!slim) continue;
+
+				const detail = expandDeck(slim);
+				const [mainCids, ms] = this.convertToCids(detail.main);
+				const [extraCids, es] = this.convertToCids(detail.extra);
+				const [sideCids, ss] = this.convertToCids(detail.side);
+
+				const { realMain, extraFromMain } = this.splitMainExtra(mainCids);
+				const finalExtra = [...extraCids, ...extraFromMain];
+
+				const slot = startSlot + i;
+				const recipeMainMax = this.savStore.saveData?.profile?.crgyMainMax ?? 60;
+				const nameMax = this.savStore.saveData?.profile?.crgyNameSize ?? 23;
+
+				this.savStore.updateRecipe(slot, {
+					name: (translateDeckType(detail.deckTypeName) || detail.name || "Imported").slice(0, nameMax - 1),
+					mainCids: realMain.slice(0, recipeMainMax),
+					sideCids: sideCids.slice(0, 15),
+					extraCids: finalExtra.slice(0, 15),
+				});
+
+				imported++;
+				totalSkipped += ms + es + ss;
+			}
+
+			this.checkedIds = [];
+			alert(totalSkipped > 0
+				? `已批量导入 ${imported} 个卡组到预制卡组 #${startSlot + 1} ~ #${startSlot + imported}。共跳过 ${totalSkipped} 张不兼容的卡。`
+				: `已批量导入 ${imported} 个卡组到预制卡组 #${startSlot + 1} ~ #${startSlot + imported}。`);
+		},
+
 		importToRecipe(): void {
 			if (!this.currentDetail || !this.savStore.isLoaded) return;
 
@@ -725,6 +805,25 @@ export default defineComponent({
 			background: #e8f0fe;
 			border-color: #3f88c5;
 		}
+	}
+
+	&__batch-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.4rem;
+		padding: 0.3rem 0.5rem;
+		background: #e8f0fe;
+		border-radius: 4px;
+		font-size: 0.75rem;
+		color: #2c3e50;
+
+		span { font-weight: 600; }
+	}
+
+	&__deck-check {
+		flex-shrink: 0;
+		cursor: pointer;
 	}
 
 	&__deck-row1 {
