@@ -104,20 +104,20 @@
 					@click="selectDeck(deck.id)"
 				>
 					<div class="format-library__deck-row1">
-						<span class="format-library__deck-type">{{ deck.deckTypeName || '未知类型' }}</span>
-						<span class="format-library__deck-format">{{ deck.formatName }}</span>
+						<span class="format-library__deck-type">{{ deck.t || '未知类型' }}</span>
+						<span class="format-library__deck-format">{{ deck.f }}</span>
 						<span
-							v-if="deck.placement"
+							v-if="deck.p"
 							class="format-library__deck-placement"
 						>
-							{{ placementLabel(deck.placement) }}
+							{{ placementLabel(deck.p) }}
 						</span>
 					</div>
 					<div class="format-library__deck-row2">
-						<span class="format-library__deck-builder">by {{ deck.builderName || '匿名' }}</span>
+						<span class="format-library__deck-builder">by {{ deck.b || '匿名' }}</span>
 						<span class="format-library__deck-stats">
-							<span class="format-library__deck-rating" title="评分">{{ deck.rating }}</span>
-							<span class="format-library__deck-downloads" title="下载量">{{ deck.downloads }}</span>
+							<span class="format-library__deck-rating" title="评分">{{ deck.r }}</span>
+							<span class="format-library__deck-downloads" title="下载量">{{ deck.dl }}</span>
 						</span>
 					</div>
 					<!-- 兼容度（仅在已加载详情后显示） -->
@@ -288,14 +288,16 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase } from "@/data/cardDatabase";
 import {
 	loadFormats,
 	loadAllDecks,
 	filterAndSort,
+	expandDeck,
 	type FormatInfo,
+	type SlimDeck,
 	type DeckDetail,
 	type DeckSort,
 	type DeckFilter,
@@ -306,7 +308,7 @@ const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
 const PAGE_SIZE = 50;
 const EXTRA_DECK_TYPE_MASK = 0x40 | 0x2000 | 0x800000 | 0x4000000;
 
-export default Vue.extend({
+export default defineComponent({
 	name: "FormatLibrary",
 
 	data() {
@@ -317,7 +319,7 @@ export default Vue.extend({
 
 			// 数据源
 			formats: [] as FormatInfo[],
-			allDecks: [] as DeckDetail[],
+			allDecks: [] as SlimDeck[],
 
 			// 筛选状态
 			selectedFormat: "" as string,
@@ -327,9 +329,9 @@ export default Vue.extend({
 			onlyCompatible: false as boolean,
 
 			// 列表状态
-			decks: [] as DeckDetail[],
+			decks: [] as SlimDeck[],
 			currentPage: 1 as number,
-			allFilteredDecks: [] as DeckDetail[],
+			allFilteredDecks: [] as SlimDeck[],
 			hasMore: true as boolean,
 			listLoading: false as boolean,
 			listError: null as string | null,
@@ -358,7 +360,7 @@ export default Vue.extend({
 		},
 
 		/** 前端过滤：只看 WC2009 完全兼容 */
-		filteredDecks(): DeckDetail[] {
+		filteredDecks(): SlimDeck[] {
 			if (!this.onlyCompatible) return this.decks;
 			return this.decks.filter((d) => {
 				const compat = this.compatCache[d.id];
@@ -367,21 +369,16 @@ export default Vue.extend({
 		},
 	},
 
-	async mounted() {
-		this.dataLoading = true;
+	created() {
 		try {
-			const [formats, decks] = await Promise.all([
-				loadFormats(),
-				loadAllDecks(),
-			]);
-			this.formats = formats;
-			this.allDecks = decks;
-			this.debugInfo = `${formats.length} 赛制 | ${decks.length} 卡组`;
+			const win = window as any;
+			this.formats = win.__FL_FORMATS__ || [];
+			this.allDecks = win.__FL_DECKS__ || [];
+			this.debugInfo = this.formats.length + " 赛制 | " + this.allDecks.length + " 卡组";
+			this.dataLoading = false;
 			this.loadDecks(true);
-		} catch (e) {
-			this.debugInfo =
-				"加载失败: " + (e instanceof Error ? e.message : String(e));
-		} finally {
+		} catch (e: any) {
+			this.debugInfo = "created 错误: " + (e?.message || e);
 			this.dataLoading = false;
 		}
 	},
@@ -470,13 +467,14 @@ export default Vue.extend({
 			this.detailLoading = false;
 			this.detailError = null;
 
-			const detail = this.allDecks.find((d) => d.id === deckId);
-			if (!detail) {
+			const slim = this.allDecks.find((d) => d.id === deckId);
+			if (!slim) {
 				this.detailError = "未找到卡组详情";
 				this.currentDetail = null;
 				return;
 			}
 
+			const detail = expandDeck(slim);
 			this.currentDetail = detail;
 
 			// 计算兼容度并缓存
