@@ -87,8 +87,8 @@
 						@click="selectDeck(deck.id)"
 					>
 						<div class="format-library__deck-row1">
-							<span class="format-library__deck-type">{{ deck.t || '未知类型' }}</span>
-							<span class="format-library__deck-format">{{ deck.f }}</span>
+							<span class="format-library__deck-type">{{ deck.tZh || deck.t || '未知类型' }}</span>
+							<span class="format-library__deck-format">{{ deck.fZh || deck.f }}</span>
 							<span v-if="deck.p" class="format-library__deck-placement">
 								{{ placementLabel(deck.p) }}
 							</span>
@@ -130,8 +130,8 @@
 			<template v-else>
 				<div class="format-library__detail-header">
 					<div class="format-library__detail-info">
-						<strong>{{ currentDetail.deckTypeName || currentDetail.name || '卡组' }}</strong>
-						<span>赛制：{{ currentDetail.formatName }}</span>
+						<strong>{{ translateDeckType(currentDetail.deckTypeName) || currentDetail.name || '卡组' }}</strong>
+						<span>赛制：{{ translateFormat(currentDetail.formatName) }}</span>
 						<span v-if="currentDetail.placement">
 							名次：{{ placementLabel(currentDetail.placement) }}
 						</span>
@@ -250,6 +250,7 @@ import { defineComponent } from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase } from "@/data/cardDatabase";
 import { useCardHoverStore } from "@/application/store/cardHover";
+import { translateFormat, translateDeckType } from "@/data/flI18n";
 import {
 	filterAndSort,
 	expandDeck,
@@ -307,7 +308,7 @@ export default defineComponent({
 			ensureData();
 			fmtOptions = rawFormats.map((f) => ({
 				value: f.name,
-				label: `${f.name} (${(f.date || "").slice(0, 4)})`,
+				label: `${translateFormat(f.name)} (${(f.date || "").slice(0, 4)})`,
 			}));
 			status = `${rawFormats.length} 赛制 | ${rawDecks.length} 卡组`;
 		} catch (e: any) {
@@ -326,7 +327,7 @@ export default defineComponent({
 			selectedSort: "rating:DESC",
 			onlyCompatible: false,
 
-			pageItems: [] as Array<{ id: number; t: string; b: string; f: string; p: number | null; r: number; dl: number }>,
+			pageItems: [] as Array<{ id: number; t: string; tZh: string; b: string; f: string; fZh: string; p: number | null; r: number; dl: number }>,
 			pageEnd: 0,
 			totalFiltered: 0,
 			hasMore: false,
@@ -410,7 +411,7 @@ export default defineComponent({
 			const newItems: typeof this.pageItems = [];
 			for (let i = start; i < end; i++) {
 				const d = filteredDecks[i];
-				newItems.push({ id: d.id, t: d.t, b: d.b, f: d.f, p: d.p, r: d.r, dl: d.dl });
+				newItems.push({ id: d.id, t: d.t, tZh: translateDeckType(d.t), b: d.b, f: d.f, fZh: translateFormat(d.f), p: d.p, r: d.r, dl: d.dl });
 			}
 
 			if (reset) {
@@ -480,6 +481,9 @@ export default defineComponent({
 			if (p === 3) return "3rd";
 			return `${p}th`;
 		},
+
+		translateFormat,
+		translateDeckType,
 
 		cardImgUrl(passcode: number): string {
 			return `${CARD_IMG_BASE}${passcode}.jpg`;
