@@ -18,7 +18,7 @@ import { writeSav } from "../savWriter";
 import { decompress, compress } from "../lz10";
 import { crc32 } from "../crc32";
 import { readRecipe, readAllRecipes } from "../recipeEditor";
-import { getCardCount, readCollection } from "../collectionEditor";
+import { getCardCount } from "../collectionEditor";
 import { readTrunk, getTrunkStats } from "../trunkReader";
 import { SAV_SIZE, GD_NIBBLE_ARRAY } from "../constants";
 
@@ -155,7 +155,7 @@ describe("背包 (nibble 数组)", () => {
     const saveData = parseSav(buffer);
 
     // 尝试读取 nibble index 0 的卡片数量
-    const count = getCardCount(saveData.gamedata, 0);
+    const count = getCardCount(saveData.gamedata, 0, GD_NIBBLE_ARRAY);
     expect(count).toBeGreaterThanOrEqual(0);
     expect(count).toBeLessThanOrEqual(9);
   });

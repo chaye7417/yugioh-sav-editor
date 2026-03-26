@@ -88,7 +88,7 @@ export const useSavStore = defineStore("sav", {
 			// 访问 gamedataVersion 以建立响应式依赖
 			void state.gamedataVersion;
 			const cidToNibble = buildCidToNibbleMap();
-			const trunk = readTrunk(state.saveData.gamedata, cidToNibble);
+			const trunk = readTrunk(state.saveData.gamedata, cidToNibble, state.saveData.profile.gdNibbleArray);
 			return getTrunkStats(trunk);
 		},
 	},
@@ -203,7 +203,7 @@ export const useSavStore = defineStore("sav", {
 			if (!this.saveData) return;
 			const card = cardDatabase.getByCid(String(cid));
 			if (!card) return;
-			setCardCount(this.saveData.gamedata, card.nibbleIndex, quantity);
+			setCardCount(this.saveData.gamedata, card.nibbleIndex, quantity, this.saveData.profile.gdNibbleArray);
 			this.gamedataVersion++;
 			this.isModified = true;
 		},
@@ -216,7 +216,7 @@ export const useSavStore = defineStore("sav", {
 		setAllCardsQuantity(quantity: number = 3): void {
 			if (!this.saveData) return;
 			const cidToNibble = buildCidToNibbleMap();
-			setAllCards(this.saveData.gamedata, cidToNibble, quantity);
+			setAllCards(this.saveData.gamedata, cidToNibble, quantity, this.saveData.profile.gdNibbleArray);
 			this.gamedataVersion++;
 			this.isModified = true;
 		},
@@ -253,9 +253,10 @@ export const useSavStore = defineStore("sav", {
 			for (const [cid, requiredCount] of needed) {
 				const card = cardDatabase.getByCid(String(cid));
 				if (!card) continue;
-				const currentCount = getCardCount(this.saveData.gamedata, card.nibbleIndex);
+				const nb = this.saveData.profile.gdNibbleArray;
+				const currentCount = getCardCount(this.saveData.gamedata, card.nibbleIndex, nb);
 				if (currentCount < requiredCount) {
-					setCardCount(this.saveData.gamedata, card.nibbleIndex, requiredCount);
+					setCardCount(this.saveData.gamedata, card.nibbleIndex, requiredCount, nb);
 					changed = true;
 				}
 			}

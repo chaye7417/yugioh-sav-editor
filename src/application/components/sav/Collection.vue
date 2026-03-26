@@ -129,7 +129,8 @@ export default defineComponent({
 			return entries.map(([cidStr, card]) => {
 				const count = getCardCount(
 					savStore.saveData!.gamedata,
-					card.nibbleIndex
+					card.nibbleIndex,
+					savStore.saveData!.profile.gdNibbleArray
 				);
 				return {
 					cid: Number(cidStr),

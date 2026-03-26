@@ -7,27 +7,25 @@
  */
 
 import type { TrunkCard, CardCollection } from "./types";
-import { GD_NIBBLE_ARRAY, CID_MIN, CID_MAX, COUNT_MAX } from "./constants";
 import { getCardCount } from "./collectionEditor";
 
 /**
  * 从解压后的 gamedata 读取背包卡片列表。
  *
- * 通过 CID → nibbleIndex 映射遍历所有卡片，
- * 读取每张卡的持有数量。
- *
  * @param gamedata - 解压后的 gamedata
  * @param cidToNibble - CID → nibbleIndex 映射
+ * @param nibbleBase - nibble 数组在 gamedata 中的偏移（WC2008: 0x65A, WC2009: 0xA4E）
  * @returns 持有数量 > 0 的卡片列表 (按 CID 排序)
  */
 export function readTrunk(
   gamedata: Uint8Array,
   cidToNibble: Map<number, number>,
+  nibbleBase: number = 0xa4e,
 ): TrunkCard[] {
   const result: TrunkCard[] = [];
 
   for (const [cid, nibbleIndex] of cidToNibble) {
-    const count = getCardCount(gamedata, nibbleIndex);
+    const count = getCardCount(gamedata, nibbleIndex, nibbleBase);
     if (count > 0) {
       result.push({ cid, count });
     }

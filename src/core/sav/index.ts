@@ -28,8 +28,6 @@ export { readRecipe, readAllRecipes, writeRecipe } from "./recipeEditor";
 export {
   getCardCount,
   setCardCount,
-  injectCards,
-  readCollection,
   setAllCards,
 } from "./collectionEditor";
 export { readTrunk, trunkToCollection, getTrunkStats } from "./trunkReader";
