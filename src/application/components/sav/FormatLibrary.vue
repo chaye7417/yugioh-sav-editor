@@ -26,6 +26,21 @@
 					</select>
 
 					<select
+						v-model="selectedEra"
+						class="form-control form-control-sm format-library__select"
+						@change="applyFilter"
+					>
+						<option
+							v-for="opt in eraOptions"
+							:key="opt.value"
+							:value="opt.value"
+						>
+							{{ opt.label }}
+						</option>
+					</select>
+				</div>
+				<div class="format-library__filter-row">
+					<select
 						v-model="selectedOrigin"
 						class="form-control form-control-sm format-library__select"
 						@change="applyFilter"
@@ -34,8 +49,7 @@
 						<option value="event">比赛卡组</option>
 						<option value="user">用户卡组</option>
 					</select>
-				</div>
-				<div class="format-library__filter-row">
+
 					<select
 						v-model="selectedPlacement"
 						class="form-control form-control-sm format-library__select"
@@ -277,12 +291,19 @@ const compatCache: Record<number, CompatResult> = {};
 let dataReady = false;
 
 
+/** 赛制名 → 年份 */
+const formatYearMap: Record<string, number> = {};
+
 function ensureData(): void {
 	if (dataReady) return;
 	const w = window as any;
 	rawFormats = w.__FL_FORMATS__ || [];
 	rawDecks = w.__FL_DECKS__ || [];
 	filteredDecks = rawDecks;
+	// 建赛制→年份映射
+	for (const f of rawFormats) {
+		formatYearMap[f.name] = Number((f.date || "").slice(0, 4)) || 0;
+	}
 	dataReady = true;
 }
 
@@ -301,6 +322,7 @@ export default defineComponent({
 
 	data() {
 		let fmtOptions: Array<{ value: string; label: string }> = [];
+		let eraOptions: Array<{ value: string; label: string }> = [{ value: "", label: "全部年份" }];
 		let status = "";
 		let initError = "";
 
@@ -311,6 +333,13 @@ export default defineComponent({
 				label: `${translateFormat(f.name)} (${(f.date || "").slice(0, 4)})`,
 			}));
 			status = `${rawFormats.length} 赛制 | ${rawDecks.length} 卡组`;
+
+			// 构建年代选项
+			const years = [...new Set(Object.values(formatYearMap))].filter(y => y > 0).sort();
+			eraOptions = [
+				{ value: "", label: "全部年份" },
+				...years.map(y => ({ value: String(y), label: `${y}年` })),
+			];
 		} catch (e: any) {
 			initError = "data() 初始化错误: " + (e?.message || e);
 			console.error("[FormatLibrary] data() error:", e);
@@ -318,10 +347,12 @@ export default defineComponent({
 
 		return {
 			formatOptions: fmtOptions,
+			eraOptions,
 			statusText: status,
 			errorMsg: initError,
 
 			selectedFormat: "",
+			selectedEra: "",
 			selectedOrigin: "",
 			selectedPlacement: 0,
 			selectedSort: "rating:DESC",
@@ -377,6 +408,12 @@ export default defineComponent({
 				const sortStr = this.selectedSort || "rating:DESC";
 				const [sortField, sortOrder] = sortStr.split(":") as [DeckSort["field"], DeckSort["order"]];
 				let result = filterAndSort(rawDecks, filter, { field: sortField, order: sortOrder });
+
+				// 年份筛选
+				if (this.selectedEra) {
+					const targetYear = Number(this.selectedEra);
+					result = result.filter((d) => formatYearMap[d.f] === targetYear);
+				}
 
 				if (this.onlyCompatible) {
 					result = result.filter((d) => {
