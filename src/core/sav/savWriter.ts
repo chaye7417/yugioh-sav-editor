@@ -153,8 +153,9 @@ export function writeSav(
   originalBuffer: ArrayBuffer,
   saveData: SaveData,
 ): ArrayBuffer {
-  // 复制原始数据
-  const result = new ArrayBuffer(SAV_SIZE);
+  // 复制原始数据（保留原始大小，兼容模拟器扩展的存档）
+  const originalSize = Math.max(originalBuffer.byteLength, SAV_SIZE);
+  const result = new ArrayBuffer(originalSize);
   const sav = new Uint8Array(result);
   sav.set(new Uint8Array(originalBuffer));
   const gdView = new DataView(
