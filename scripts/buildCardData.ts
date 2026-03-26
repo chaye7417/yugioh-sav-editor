@@ -91,6 +91,11 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     cidToNibbleFile: "cid_to_nibble_wc2008.json",
     outputFile: "cards-wc2008.json",
   },
+  wc2007: {
+    label: "WC2007",
+    cidToNibbleFile: "cid_to_nibble_wc2007.json",
+    outputFile: "cards-wc2007.json",
+  },
 };
 
 // ============================================================

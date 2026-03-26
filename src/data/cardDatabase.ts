@@ -178,6 +178,7 @@ let currentLoadedVersion: string = "wc2009";
 
 /** 版本 → 卡片数据 JSON URL 映射 */
 const VERSION_CARD_URL: Record<string, string> = {
+  wc2007: "/cards-wc2007.json",
   wc2009: "/cards.json",
   wc2008: "/cards-wc2008.json",
 };

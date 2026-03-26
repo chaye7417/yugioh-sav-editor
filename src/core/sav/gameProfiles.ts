@@ -8,7 +8,7 @@
 // ── 类型定义 ────────────────────────────────────────────────
 
 /** 支持的游戏版本 */
-export type GameVersion = "wc2008" | "wc2009";
+export type GameVersion = "wc2007" | "wc2008" | "wc2009";
 
 /** 游戏版本配置 */
 export interface GameProfile {
@@ -71,6 +71,40 @@ export interface GameProfile {
   /** 半字节数组偏移 (卡片收藏) */
   gdNibbleArray: number;
 }
+
+// ── WC2007 配置 ──────────────────────────────────────────────
+
+export const WC2007_PROFILE: GameProfile = {
+  version: "wc2007",
+  displayName: "Yu-Gi-Oh! World Championship 2007",
+
+  savMinSize: 0x40000,
+
+  tdgyOffsets: [0x28000, 0x29800, 0x2b000, 0x2c800],
+
+  crgyBaseOffset: 0x10000,
+  crgySlotSize: 384,
+  crgySlotCount: 64,
+  crgyNameOffset: 0x09,
+  crgyNameSize: 27,
+  crgyCountOffsets: { main: 0x24, extra: 0x2c, side: 0x28 },
+  crgyCountType: "uint32",
+  crgyCidOffsets: { main: 0x30, side: 0xd0, extra: 0xee },
+  crgyMainMax: 80,
+  crgyCrcStart: 0x08,
+  crgyCrcEnd: 0x12c,
+  crgyPadByte: 0xff,
+
+  gamedataDecompSize: 0x1750,
+  gdDp: 0x024,
+  gdActiveDeckFlag: 0x094,
+  gdActiveDeckName: 0x095,
+  gdActiveDeckNameSize: 27,
+  gdDeckCounts: { main: 0x0b0, extra: 0x0b8, side: 0x0b4 },
+  gdDeckMainCids: 0x0bc,
+  gdDeckMainMax: 80,
+  gdNibbleArray: 0x0260,
+};
 
 // ── WC2008 配置 ──────────────────────────────────────────────
 
@@ -144,31 +178,71 @@ export const WC2009_PROFILE: GameProfile = {
 
 /** 所有支持的游戏配置 */
 export const GAME_PROFILES: Record<GameVersion, GameProfile> = {
+  wc2007: WC2007_PROFILE,
   wc2008: WC2008_PROFILE,
   wc2009: WC2009_PROFILE,
 };
 
 // ── 版本检测 ─────────────────────────────────────────────────
 
+/** WC07 文件头魔数 "YuGiWC07" */
+const SAV_MAGIC_WC07 = new Uint8Array([
+  0x59, 0x75, 0x47, 0x69, 0x57, 0x43, 0x30, 0x37,
+]);
+
+/** WC08 文件头魔数 "YuGiWC08" */
+const SAV_MAGIC_WC08 = new Uint8Array([
+  0x59, 0x75, 0x47, 0x69, 0x57, 0x43, 0x30, 0x38,
+]);
+
 /**
- * 根据存档文件大小自动检测游戏版本。
+ * 比较两个 Uint8Array 前 N 字节是否相同。
+ */
+function bytesEq(a: Uint8Array, b: Uint8Array, len: number): boolean {
+  for (let i = 0; i < len; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * 根据文件头和文件大小自动检测游戏版本。
+ *
+ * - "YuGiWC07" → WC2007
+ * - "YuGiWC08" → 按大小区分 WC2008 / WC2009
  *
  * @param buffer 存档文件的 ArrayBuffer
  * @returns 匹配的 GameProfile
- * @throws Error 如果文件大小不匹配任何已知版本
+ * @throws Error 如果文件头不匹配任何已知版本
  */
 export function detectGameVersion(buffer: ArrayBuffer): GameProfile {
-  const size = buffer.byteLength;
+  const sav = new Uint8Array(buffer);
+  const header = sav.subarray(0, 8);
 
-  if (size >= WC2008_PROFILE.savMinSize) {
-    return WC2008_PROFILE;
+  // YuGiWC07 → WC2007
+  if (bytesEq(header, SAV_MAGIC_WC07, 8)) {
+    return WC2007_PROFILE;
   }
 
-  if (size >= WC2009_PROFILE.savMinSize) {
-    return WC2009_PROFILE;
+  // YuGiWC08 → 按大小区分 WC2008 / WC2009
+  if (bytesEq(header, SAV_MAGIC_WC08, 8)) {
+    const size = buffer.byteLength;
+    if (size >= WC2008_PROFILE.savMinSize) {
+      return WC2008_PROFILE;
+    }
+    if (size >= WC2009_PROFILE.savMinSize) {
+      return WC2009_PROFILE;
+    }
+    throw new Error(
+      `存档文件过小 (${size} bytes)，最小需要 ${WC2009_PROFILE.savMinSize} bytes (64KB)`,
+    );
   }
 
+  // 未知文件头
+  const headerHex = Array.from(header)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join(" ");
   throw new Error(
-    `存档文件过小 (${size} bytes)，最小需要 ${WC2009_PROFILE.savMinSize} bytes (64KB)`,
+    `未知的存档文件头: ${headerHex}，期望 YuGiWC07 或 YuGiWC08`,
   );
 }

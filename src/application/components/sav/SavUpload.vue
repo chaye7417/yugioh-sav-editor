@@ -32,7 +32,7 @@
 						拖拽 .sav 文件到此处，或点击选择文件
 					</p>
 					<p class="sav-upload__hint">
-						支持 WC2008 和 WC2009 存档
+						支持 WC2007、WC2008 和 WC2009 存档
 					</p>
 				</div>
 			</div>

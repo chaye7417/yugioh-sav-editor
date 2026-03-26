@@ -24,7 +24,8 @@
 		"lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
 		"format": "prettier --write src/",
 		"build:cards": "tsx scripts/buildCardData.ts",
-		"build:cards:wc2008": "tsx scripts/buildCardData.ts --game wc2008"
+		"build:cards:wc2008": "tsx scripts/buildCardData.ts --game wc2008",
+		"build:cards:wc2007": "tsx scripts/buildCardData.ts --game wc2007"
 	},
 	"dependencies": {
 		"base64-js": "^1.5.1",

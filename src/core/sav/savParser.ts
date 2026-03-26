@@ -9,7 +9,6 @@ import type { SaveData, TdgyBlock, CrgyRecipe, ActiveDeck } from "./types";
 import type { GameProfile } from "./gameProfiles";
 import { detectGameVersion } from "./gameProfiles";
 import {
-  SAV_MAGIC,
   TDGY_MAGIC,
   TDGY_VERSION_OFFSET,
   TDGY_DATALEN_OFFSET,
@@ -191,10 +190,7 @@ export function parseSav(buffer: ArrayBuffer): SaveData {
     );
   }
 
-  // 验证文件头 "YuGiWC08"
-  if (!bytesEqual(sav.subarray(0, 8), SAV_MAGIC, 8)) {
-    throw new Error("SAV 文件头错误, 期望 YuGiWC08");
-  }
+  // 文件头验证已在 detectGameVersion 中完成
 
   // 从多个 TDGY 块中选择版本最高的
   const { tdgy, tdgyBackup } = selectTdgyBlocks(sav, profile.tdgyOffsets);

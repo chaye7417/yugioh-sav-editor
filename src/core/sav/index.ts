@@ -16,6 +16,7 @@ export type {
 
 export type { GameVersion, GameProfile } from "./gameProfiles";
 export {
+  WC2007_PROFILE,
   WC2008_PROFILE,
   WC2009_PROFILE,
   GAME_PROFILES,
