@@ -284,7 +284,7 @@
 							:key="i - 1"
 							:value="i - 1"
 						>
-							#{{ i }}
+							#{{ i }}{{ slotLabel(i - 1) }}
 						</option>
 					</select>
 					<button
@@ -664,6 +664,16 @@ export default defineComponent({
 			alert(totalSkipped > 0
 				? `已导入到活动卡组。跳过了 ${totalSkipped} 张不在 ${this.gameShortName} 卡池的卡。`
 				: "已导入到活动卡组。");
+		},
+
+		slotLabel(slot: number): string {
+			const recipes = this.savStore.saveData?.recipes;
+			if (!recipes || !recipes[slot]) return " (空)";
+			const r = recipes[slot];
+			if (r.mainCids.length === 0 && r.sideCids.length === 0 && r.extraCids.length === 0) {
+				return " (空)";
+			}
+			return r.name ? ` - ${r.name}` : " (已占用)";
 		},
 
 		toggleCheck(deckId: number): void {
@@ -1054,7 +1064,7 @@ export default defineComponent({
 	}
 
 	&__slot-select {
-		width: 70px;
+		width: 180px;
 		font-size: 0.75rem;
 		padding: 0.2rem 0.3rem;
 	}
