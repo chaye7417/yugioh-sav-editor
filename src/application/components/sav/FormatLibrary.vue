@@ -3,7 +3,7 @@
 		<!-- 标题 -->
 		<div class="format-library__header">
 			<h3 class="format-library__title">赛制卡组库</h3>
-			<span class="format-library__subtitle">formatlibrary.com</span>
+			<span class="format-library__subtitle">formatlibrary.com | {{ debugInfo }}</span>
 		</div>
 
 		<!-- 筛选区 -->
@@ -70,7 +70,7 @@
 			<!-- 初始加载大文件 -->
 			<div v-if="dataLoading" class="format-library__loading">
 				<div class="format-library__spinner"></div>
-				<span>正在加载卡组数据 (56MB)...</span>
+				<span>正在加载卡组数据...</span>
 			</div>
 
 			<!-- 加载中 -->
@@ -288,13 +288,13 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
+import Vue from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase } from "@/data/cardDatabase";
 import {
 	loadFormats,
 	loadAllDecks,
-	filterAndPageDecks,
+	filterAndSort,
 	type FormatInfo,
 	type DeckDetail,
 	type DeckSort,
@@ -302,211 +302,242 @@ import {
 } from "@/data/formatLibraryApi";
 import { checkWc2009Compat, type CompatResult } from "@/data/wc2009Compat";
 
-/** 卡图 CDN 地址 */
 const CARD_IMG_BASE = "https://cdn.233.momobako.com/ygopro/pics/";
-
-/** 每页加载数量 */
-const PAGE_SIZE = 20;
-
-/** 额外卡组类型标记 (融合 | 同调 | 超量 | 连接) */
+const PAGE_SIZE = 50;
 const EXTRA_DECK_TYPE_MASK = 0x40 | 0x2000 | 0x800000 | 0x4000000;
 
-export default defineComponent({
+export default Vue.extend({
 	name: "FormatLibrary",
-	setup() {
-		const savStore = useSavStore();
 
-		// 数据加载状态
-		const dataLoading = ref(true);
-		const allDecks = ref<DeckDetail[]>([]);
+	data() {
+		return {
+			// 初始加载状态
+			dataLoading: true as boolean,
+			debugInfo: "" as string,
 
-		// 筛选状态
-		const formats = ref<FormatInfo[]>([]);
-		const selectedFormat = ref("");
-		const selectedOrigin = ref("");
-		const selectedPlacement = ref(0);
-		const selectedSort = ref("rating:DESC");
-		const onlyCompatible = ref(false);
+			// 数据源
+			formats: [] as FormatInfo[],
+			allDecks: [] as DeckDetail[],
 
-		// 列表状态
-		const decks = ref<DeckDetail[]>([]);
-		const currentPage = ref(1);
-		const totalCount = ref(0);
-		const hasMore = ref(true);
-		const listLoading = ref(false);
-		const listError = ref<string | null>(null);
+			// 筛选状态
+			selectedFormat: "" as string,
+			selectedOrigin: "" as string,
+			selectedPlacement: 0 as number,
+			selectedSort: "rating:DESC" as string,
+			onlyCompatible: false as boolean,
 
-		// 详情状态
-		const selectedDeckId = ref<number | null>(null);
-		const currentDetail = ref<DeckDetail | null>(null);
-		const detailLoading = ref(false);
-		const detailError = ref<string | null>(null);
+			// 列表状态
+			decks: [] as DeckDetail[],
+			currentPage: 1 as number,
+			allFilteredDecks: [] as DeckDetail[],
+			hasMore: true as boolean,
+			listLoading: false as boolean,
+			listError: null as string | null,
 
-		// 兼容度缓存 (deckId → CompatResult)，用普通对象代替 Map（Vue 2 模板不支持 Map）
-		const compatCache = ref<Record<number, CompatResult>>({});
+			// 详情状态
+			selectedDeckId: null as number | null,
+			currentDetail: null as DeckDetail | null,
+			detailLoading: false as boolean,
+			detailError: null as string | null,
 
-		/** 当前卡组详情的兼容度 */
-		const currentCompat = computed<CompatResult | null>(() => {
-			if (!selectedDeckId.value) return null;
-			return compatCache.value[selectedDeckId.value] ?? null;
-		});
+			// 兼容度缓存
+			compatCache: {} as Record<number, CompatResult>,
+		};
+	},
+
+	computed: {
+		/** Pinia store（在 computed 中访问确保响应式） */
+		savStore() {
+			return useSavStore();
+		},
+
+		/** 当前选中卡组的兼容度结果 */
+		currentCompat(): CompatResult | null {
+			if (!this.selectedDeckId) return null;
+			return this.compatCache[this.selectedDeckId] ?? null;
+		},
 
 		/** 前端过滤：只看 WC2009 完全兼容 */
-		const filteredDecks = computed(() => {
-			if (!onlyCompatible.value) return decks.value;
-			return decks.value.filter((d) => {
-				const compat = compatCache.value[d.id];
+		filteredDecks(): DeckDetail[] {
+			if (!this.onlyCompatible) return this.decks;
+			return this.decks.filter((d) => {
+				const compat = this.compatCache[d.id];
 				return compat?.isFullyCompatible === true;
 			});
-		});
+		},
+	},
 
+	async mounted() {
+		this.dataLoading = true;
+		try {
+			const [formats, decks] = await Promise.all([
+				loadFormats(),
+				loadAllDecks(),
+			]);
+			this.formats = formats;
+			this.allDecks = decks;
+			this.debugInfo = `${formats.length} 赛制 | ${decks.length} 卡组`;
+			this.loadDecks(true);
+		} catch (e) {
+			this.debugInfo =
+				"加载失败: " + (e instanceof Error ? e.message : String(e));
+		} finally {
+			this.dataLoading = false;
+		}
+	},
+
+	methods: {
 		/** 解析排序字符串 */
-		function parseSort(): DeckSort {
-			const [field, order] = selectedSort.value.split(":") as [
+		parseSort(): DeckSort {
+			const [field, order] = this.selectedSort.split(":") as [
 				DeckSort["field"],
 				DeckSort["order"],
 			];
 			return { field, order };
-		}
+		},
 
 		/** 构建筛选条件 */
-		function buildFilter(): DeckFilter {
+		buildFilter(): DeckFilter {
 			const filter: DeckFilter = {};
-			if (selectedFormat.value) filter.formatName = selectedFormat.value;
-			if (selectedOrigin.value) {
-				filter.origin = selectedOrigin.value as "event" | "user";
+			if (this.selectedFormat) filter.formatName = this.selectedFormat;
+			if (this.selectedOrigin) {
+				filter.origin = this.selectedOrigin as "event" | "user";
 			}
-			if (selectedPlacement.value > 0) {
-				filter.placementMax = selectedPlacement.value;
+			if (this.selectedPlacement > 0) {
+				filter.placementMax = this.selectedPlacement;
 			}
 			return filter;
-		}
+		},
 
 		/**
 		 * 从内存中的 allDecks 筛选并加载卡组列表。
 		 *
 		 * @param reset - 是否重置列表（筛选条件变化时）
 		 */
-		function loadDecks(reset: boolean): void {
+		loadDecks(reset: boolean): void {
 			if (reset) {
-				currentPage.value = 1;
-				decks.value = [];
-				hasMore.value = true;
-				selectedDeckId.value = null;
-				currentDetail.value = null;
+				this.currentPage = 1;
+				this.decks = [];
+				this.hasMore = true;
+				this.selectedDeckId = null;
+				this.currentDetail = null;
 			}
 
-			if (allDecks.value.length === 0) return;
+			if (this.allDecks.length === 0) return;
 
-			listLoading.value = true;
-			listError.value = null;
+			this.listLoading = true;
+			this.listError = null;
 
 			try {
-				const { items, total } = filterAndPageDecks(
-					allDecks.value,
-					buildFilter(),
-					parseSort(),
-					currentPage.value,
-					PAGE_SIZE
+				// filterAndSort 返回全量筛选+排序结果
+				this.allFilteredDecks = filterAndSort(
+					this.allDecks,
+					this.buildFilter(),
+					this.parseSort(),
 				);
-				totalCount.value = total;
 
-				if (reset) {
-					decks.value = items;
-				} else {
-					decks.value = [...decks.value, ...items];
-				}
-				hasMore.value = decks.value.length < total;
+				// 手动分页：取前 PAGE_SIZE * currentPage 条
+				const end = PAGE_SIZE * this.currentPage;
+				this.decks = this.allFilteredDecks.slice(0, end);
+				this.hasMore = this.decks.length < this.allFilteredDecks.length;
 			} catch (e) {
-				listError.value = e instanceof Error ? e.message : "筛选失败";
+				this.listError = e instanceof Error ? e.message : "筛选失败";
 			} finally {
-				listLoading.value = false;
+				this.listLoading = false;
 			}
-		}
+		},
 
 		/** 加载更多（下一页） */
-		function loadMore(): void {
-			currentPage.value++;
-			loadDecks(false);
-		}
+		loadMore(): void {
+			this.currentPage++;
+			this.loadDecks(false);
+		},
 
-		/** 筛选条件变化时（前端即时筛选，无需防抖） */
-		function onFilterChange(): void {
-			loadDecks(true);
-		}
+		/** 筛选条件变化时 */
+		onFilterChange(): void {
+			this.loadDecks(true);
+		},
 
 		/** 选中某个卡组（从内存直接获取详情） */
-		function selectDeck(deckId: number): void {
-			if (selectedDeckId.value === deckId) {
-				// 再次点击取消选中
-				selectedDeckId.value = null;
-				currentDetail.value = null;
+		selectDeck(deckId: number): void {
+			if (this.selectedDeckId === deckId) {
+				this.selectedDeckId = null;
+				this.currentDetail = null;
 				return;
 			}
 
-			selectedDeckId.value = deckId;
-			detailLoading.value = false;
-			detailError.value = null;
+			this.selectedDeckId = deckId;
+			this.detailLoading = false;
+			this.detailError = null;
 
-			// 从内存中查找详情
-			const detail = allDecks.value.find((d) => d.id === deckId);
+			const detail = this.allDecks.find((d) => d.id === deckId);
 			if (!detail) {
-				detailError.value = "未找到卡组详情";
-				currentDetail.value = null;
+				this.detailError = "未找到卡组详情";
+				this.currentDetail = null;
 				return;
 			}
 
-			currentDetail.value = detail;
+			this.currentDetail = detail;
 
 			// 计算兼容度并缓存
-			if (!compatCache.value[deckId]) {
+			if (!this.compatCache[deckId]) {
 				const allCards = [
 					...detail.main,
 					...detail.extra,
 					...detail.side,
 				];
 				const compat = checkWc2009Compat(allCards);
-				compatCache.value = { ...compatCache.value, [deckId]: compat };
+				// 使用展开创建新对象以触发 Vue 2 响应式更新
+				this.compatCache = { ...this.compatCache, [deckId]: compat };
 			}
-		}
+		},
 
-		/** 获取卡组兼容度（模板 helper，避免非空断言） */
-		function getCompat(deckId: number): CompatResult {
-			return compatCache.value[deckId] ?? { totalCards: 0, compatibleCards: 0, incompatibleCards: [], percentage: 0, isFullyCompatible: false };
-		}
+		/** 获取卡组兼容度（模板 helper） */
+		getCompat(deckId: number): CompatResult {
+			return (
+				this.compatCache[deckId] ?? {
+					totalCards: 0,
+					compatibleCards: 0,
+					incompatibleCards: [],
+					percentage: 0,
+					isFullyCompatible: false,
+				}
+			);
+		},
 
 		/** 名次标签 */
-		function placementLabel(placement: number): string {
+		placementLabel(placement: number): string {
 			if (placement === 1) return "1st";
 			if (placement === 2) return "2nd";
 			if (placement === 3) return "3rd";
 			return `${placement}th`;
-		}
+		},
 
 		/** 卡图 URL */
-		function getCardImageUrl(passcode: number): string {
+		getCardImageUrl(passcode: number): string {
 			return `${CARD_IMG_BASE}${passcode}.jpg`;
-		}
+		},
 
 		/** 检查单张卡是否兼容 WC2009 */
-		function isCardCompatible(artworkId: number): boolean {
-			return cardDatabase.getCidByPasscode(String(artworkId)) !== undefined;
-		}
+		isCardCompatible(artworkId: number): boolean {
+			return (
+				cardDatabase.getCidByPasscode(String(artworkId)) !== undefined
+			);
+		},
 
 		/**
 		 * 将卡组的 artworkId 数组转换为 WC2009 CID 数组。
 		 * 跳过不在卡池中的卡。
-		 *
-		 * @param cards - DeckCard 数组
-		 * @returns [CID 数组, 跳过数量]
 		 */
-		function convertToCids(
-			cards: { name: string; artworkId: number }[]
+		convertToCids(
+			cards: { name: string; artworkId: number }[],
 		): [number[], number] {
 			const cids: number[] = [];
 			let skipped = 0;
 			for (const card of cards) {
-				const cidStr = cardDatabase.getCidByPasscode(String(card.artworkId));
+				const cidStr = cardDatabase.getCidByPasscode(
+					String(card.artworkId),
+				);
 				if (cidStr) {
 					cids.push(Number(cidStr));
 				} else {
@@ -514,28 +545,34 @@ export default defineComponent({
 				}
 			}
 			return [cids, skipped];
-		}
+		},
 
 		/** 判断卡片是否属于额外卡组 */
-		function isExtraDeckCard(cid: number): boolean {
+		isExtraDeckCard(cid: number): boolean {
 			const card = cardDatabase.getByCid(String(cid));
 			if (!card) return false;
 			return (card.type & EXTRA_DECK_TYPE_MASK) !== 0;
-		}
+		},
 
 		/** 导入到活动卡组 */
-		function importToActiveDeck(): void {
-			if (!currentDetail.value || !savStore.isLoaded) return;
+		importToActiveDeck(): void {
+			if (!this.currentDetail || !this.savStore.isLoaded) return;
 
-			const [mainCids, mainSkipped] = convertToCids(currentDetail.value.main);
-			const [extraCids, extraSkipped] = convertToCids(currentDetail.value.extra);
-			const [sideCids, sideSkipped] = convertToCids(currentDetail.value.side);
+			const [mainCids, mainSkipped] = this.convertToCids(
+				this.currentDetail.main,
+			);
+			const [extraCids, extraSkipped] = this.convertToCids(
+				this.currentDetail.extra,
+			);
+			const [sideCids, sideSkipped] = this.convertToCids(
+				this.currentDetail.side,
+			);
 
 			// 对主卡组中混入的额外卡组类型做分离
 			const realMain: number[] = [];
 			const extraFromMain: number[] = [];
 			for (const cid of mainCids) {
-				if (isExtraDeckCard(cid)) {
+				if (this.isExtraDeckCard(cid)) {
 					extraFromMain.push(cid);
 				} else {
 					realMain.push(cid);
@@ -544,8 +581,11 @@ export default defineComponent({
 
 			const finalExtra = [...extraCids, ...extraFromMain];
 
-			savStore.updateActiveDeck({
-				name: currentDetail.value.deckTypeName || currentDetail.value.name || "Imported",
+			this.savStore.updateActiveDeck({
+				name:
+					this.currentDetail.deckTypeName ||
+					this.currentDetail.name ||
+					"Imported",
 				mainCount: realMain.length,
 				sideCount: sideCids.length,
 				extraCount: finalExtra.length,
@@ -556,24 +596,32 @@ export default defineComponent({
 
 			const totalSkipped = mainSkipped + extraSkipped + sideSkipped;
 			if (totalSkipped > 0) {
-				alert(`已导入到活动卡组。跳过了 ${totalSkipped} 张不在 WC2009 卡池的卡。`);
+				alert(
+					`已导入到活动卡组。跳过了 ${totalSkipped} 张不在 WC2009 卡池的卡。`,
+				);
 			} else {
 				alert("已导入到活动卡组。");
 			}
-		}
+		},
 
 		/** 导入到当前选中的预制卡组槽位 */
-		function importToRecipe(): void {
-			if (!currentDetail.value || !savStore.isLoaded) return;
+		importToRecipe(): void {
+			if (!this.currentDetail || !this.savStore.isLoaded) return;
 
-			const [mainCids, mainSkipped] = convertToCids(currentDetail.value.main);
-			const [extraCids, extraSkipped] = convertToCids(currentDetail.value.extra);
-			const [sideCids, sideSkipped] = convertToCids(currentDetail.value.side);
+			const [mainCids, mainSkipped] = this.convertToCids(
+				this.currentDetail.main,
+			);
+			const [extraCids, extraSkipped] = this.convertToCids(
+				this.currentDetail.extra,
+			);
+			const [sideCids, sideSkipped] = this.convertToCids(
+				this.currentDetail.side,
+			);
 
 			const realMain: number[] = [];
 			const extraFromMain: number[] = [];
 			for (const cid of mainCids) {
-				if (isExtraDeckCard(cid)) {
+				if (this.isExtraDeckCard(cid)) {
 					extraFromMain.push(cid);
 				} else {
 					realMain.push(cid);
@@ -582,10 +630,10 @@ export default defineComponent({
 
 			const finalExtra = [...extraCids, ...extraFromMain];
 
-			savStore.updateRecipe(savStore.activeRecipeSlot, {
+			this.savStore.updateRecipe(this.savStore.activeRecipeSlot, {
 				name: (
-					currentDetail.value.deckTypeName ||
-					currentDetail.value.name ||
+					this.currentDetail.deckTypeName ||
+					this.currentDetail.name ||
 					"Imported"
 				).slice(0, 22),
 				mainCids: realMain.slice(0, 60),
@@ -596,66 +644,14 @@ export default defineComponent({
 			const totalSkipped = mainSkipped + extraSkipped + sideSkipped;
 			if (totalSkipped > 0) {
 				alert(
-					`已导入到预制卡组 #${savStore.activeRecipeSlot + 1}。跳过了 ${totalSkipped} 张不在 WC2009 卡池的卡。`
+					`已导入到预制卡组 #${this.savStore.activeRecipeSlot + 1}。跳过了 ${totalSkipped} 张不在 WC2009 卡池的卡。`,
 				);
 			} else {
-				alert(`已导入到预制卡组 #${savStore.activeRecipeSlot + 1}。`);
+				alert(
+					`已导入到预制卡组 #${this.savStore.activeRecipeSlot + 1}。`,
+				);
 			}
-		}
-
-		// 初始化：并行加载赛制列表和全量卡组数据
-		dataLoading.value = true;
-
-		Promise.all([
-			loadFormats().then((fmts) => {
-				formats.value = fmts;
-			}).catch(() => {
-				// 赛制列表加载失败不阻塞页面
-			}),
-			loadAllDecks().then((all) => {
-				allDecks.value = all;
-			}),
-		])
-			.then(() => {
-				dataLoading.value = false;
-				loadDecks(true);
-			})
-			.catch((e) => {
-				dataLoading.value = false;
-				listError.value = e instanceof Error ? e.message : "加载数据失败";
-			});
-
-		return {
-			savStore,
-			dataLoading,
-			formats,
-			selectedFormat,
-			selectedOrigin,
-			selectedPlacement,
-			selectedSort,
-			onlyCompatible,
-			decks,
-			filteredDecks,
-			hasMore,
-			listLoading,
-			listError,
-			selectedDeckId,
-			currentDetail,
-			currentCompat,
-			detailLoading,
-			detailError,
-			compatCache,
-			loadDecks,
-			loadMore,
-			onFilterChange,
-			selectDeck,
-			placementLabel,
-			getCompat,
-			getCardImageUrl,
-			isCardCompatible,
-			importToActiveDeck,
-			importToRecipe,
-		};
+		},
 	},
 });
 </script>
