@@ -5,7 +5,7 @@
  * 提供赛制、卡组列表、卡组详情等查询能力。
  */
 
-const API_BASE = "https://formatlibrary.com/api";
+const API_BASE = "/flapi";
 
 // ============================================================
 // 类型定义
@@ -105,11 +105,12 @@ function buildFilterString(filter: DeckFilter): string {
  * @returns 完整 URL
  */
 function buildUrl(path: string, params: Record<string, string>): string {
-  const url = new URL(`${API_BASE}${path}`);
+  const parts: string[] = [];
   for (const [k, v] of Object.entries(params)) {
-    if (v) url.searchParams.set(k, v);
+    if (v) parts.push(`${k}=${v}`);
   }
-  return url.toString();
+  const qs = parts.length > 0 ? `?${parts.join("&")}` : "";
+  return `${API_BASE}${path}${qs}`;
 }
 
 // ============================================================

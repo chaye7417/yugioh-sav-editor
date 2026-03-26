@@ -116,19 +116,19 @@
 					</div>
 					<!-- 兼容度（仅在已加载详情后显示） -->
 					<div
-						v-if="compatCache.has(deck.id)"
+						v-if="compatCache[deck.id]"
 						class="format-library__deck-compat"
 						:class="{
-							'format-library__deck-compat--full': compatCache.get(deck.id)!.isFullyCompatible,
-							'format-library__deck-compat--partial': !compatCache.get(deck.id)!.isFullyCompatible,
+							'format-library__deck-compat--full': getCompat(deck.id).isFullyCompatible,
+							'format-library__deck-compat--partial': !getCompat(deck.id).isFullyCompatible,
 						}"
 					>
-						WC2009: {{ compatCache.get(deck.id)!.compatibleCards }}/{{ compatCache.get(deck.id)!.totalCards }}
-						<template v-if="compatCache.get(deck.id)!.isFullyCompatible">
+						WC2009: {{ getCompat(deck.id).compatibleCards }}/{{ getCompat(deck.id).totalCards }}
+						<template v-if="getCompat(deck.id).isFullyCompatible">
 							&#x2705;
 						</template>
 						<template v-else>
-							&#x26A0;&#xFE0F; ({{ compatCache.get(deck.id)!.incompatibleCards.length }}张不在卡池)
+							&#x26A0;&#xFE0F; ({{ getCompat(deck.id).incompatibleCards.length }}张不在卡池)
 						</template>
 					</div>
 				</div>
@@ -282,7 +282,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref, watch } from "vue";
+import { computed, defineComponent, ref } from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase } from "@/data/cardDatabase";
 import {
@@ -332,8 +332,8 @@ export default defineComponent({
 		const detailLoading = ref(false);
 		const detailError = ref<string | null>(null);
 
-		// 兼容度缓存 (deckId → CompatResult)
-		const compatCache = ref(new Map<number, CompatResult>());
+		// 兼容度缓存 (deckId → CompatResult)，用普通对象代替 Map（Vue 2 模板不支持 Map）
+		const compatCache = ref<Record<number, CompatResult>>({});
 
 		// 防抖定时器
 		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -341,14 +341,14 @@ export default defineComponent({
 		/** 当前卡组详情的兼容度 */
 		const currentCompat = computed<CompatResult | null>(() => {
 			if (!selectedDeckId.value) return null;
-			return compatCache.value.get(selectedDeckId.value) ?? null;
+			return compatCache.value[selectedDeckId.value] ?? null;
 		});
 
 		/** 前端过滤：只看 WC2009 完全兼容 */
 		const filteredDecks = computed(() => {
 			if (!onlyCompatible.value) return decks.value;
 			return decks.value.filter((d) => {
-				const compat = compatCache.value.get(d.id);
+				const compat = compatCache.value[d.id];
 				return compat?.isFullyCompatible === true;
 			});
 		});
@@ -399,7 +399,7 @@ export default defineComponent({
 					PAGE_SIZE,
 					currentPage.value
 				);
-				if (reset) {
+					if (reset) {
 					decks.value = result;
 				} else {
 					decks.value = [...decks.value, ...result];
@@ -451,14 +451,17 @@ export default defineComponent({
 					...detail.side,
 				];
 				const compat = checkWc2009Compat(allCards);
-				const newCache = new Map(compatCache.value);
-				newCache.set(deckId, compat);
-				compatCache.value = newCache;
+				compatCache.value = { ...compatCache.value, [deckId]: compat };
 			} catch (e) {
 				detailError.value = e instanceof Error ? e.message : "加载详情失败";
 			} finally {
 				detailLoading.value = false;
 			}
+		}
+
+		/** 获取卡组兼容度（模板 helper，避免非空断言） */
+		function getCompat(deckId: number): CompatResult {
+			return compatCache.value[deckId] ?? { totalCards: 0, compatibleCards: 0, incompatibleCards: [], percentage: 0, isFullyCompatible: false };
 		}
 
 		/** 名次标签 */
@@ -590,14 +593,16 @@ export default defineComponent({
 		}
 
 		// 初始化：加载赛制列表 + 默认卡组列表
-		onMounted(async () => {
-			try {
-				formats.value = await fetchFormats();
-			} catch {
-				// 赛制列表加载失败不阻断，筛选区留空即可
-			}
-			await loadDecks(true);
-		});
+		// 使用 .then() 而非 onMounted + async/await，避免 Vue 2.7 Composition API 的异步边界问题
+		fetchFormats()
+			.then((fmts) => {
+				formats.value = fmts;
+			})
+			.catch(() => {
+				// 赛制列表加载失败不阻塞页面
+			});
+
+		loadDecks(true);
 
 		// 监听 onlyCompatible 变化（纯前端过滤，无需重新请求）
 		// filteredDecks 是 computed，会自动响应
@@ -626,6 +631,7 @@ export default defineComponent({
 			onFilterChange,
 			selectDeck,
 			placementLabel,
+			getCompat,
 			getCardImageUrl,
 			isCardCompatible,
 			importToActiveDeck,
