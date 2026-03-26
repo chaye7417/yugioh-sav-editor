@@ -73,6 +73,13 @@
 						>
 							赛制卡组库
 						</button>
+						<button
+							class="sav-layout__nav-item"
+							:class="{ 'sav-layout__nav-item--active': savStore.activePanel === 'emulator' }"
+							@click="savStore.setActivePanel('emulator')"
+						>
+							🎮 模拟器
+						</button>
 					</nav>
 
 					<!-- 当选中预制卡组时，显示卡组列表 -->
@@ -87,6 +94,7 @@
 					<Collection v-else-if="savStore.activePanel === 'collection'" />
 					<DpEditor v-else-if="savStore.activePanel === 'dp'" />
 					<FormatLibrary v-else-if="savStore.activePanel === 'formatLibrary'" />
+					<NdsEmulator v-else-if="savStore.activePanel === 'emulator'" :savBuffer="currentSavBuffer" />
 				</main>
 
 				<!-- 卡片详情面板（常驻） -->
@@ -105,8 +113,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import { useSavStore } from "@/application/store/sav";
+import { writeSav } from "@/core/sav";
 import SavUpload from "./SavUpload.vue";
 import SavOverview from "./SavOverview.vue";
 import RecipeList from "./RecipeList.vue";
@@ -115,6 +124,7 @@ import ActiveDeckEditor from "./ActiveDeckEditor.vue";
 import Collection from "./Collection.vue";
 import DpEditor from "./DpEditor.vue";
 import FormatLibrary from "./FormatLibrary.vue";
+import NdsEmulator from "./NdsEmulator.vue";
 import CardInfoPanel from "./CardInfoPanel.vue";
 
 export default defineComponent({
@@ -128,11 +138,21 @@ export default defineComponent({
 		Collection,
 		DpEditor,
 		FormatLibrary,
+		NdsEmulator,
 		CardInfoPanel,
 	},
 	setup() {
 		const savStore = useSavStore();
 		const savFileInput = ref<HTMLInputElement | null>(null);
+
+		const currentSavBuffer = computed<ArrayBuffer | null>(() => {
+			if (!savStore.saveData || !savStore.originalBuffer) return null;
+			try {
+				return writeSav(savStore.originalBuffer, savStore.saveData);
+			} catch {
+				return savStore.originalBuffer;
+			}
+		});
 
 		function uploadNew(): void {
 			savFileInput.value?.click();
@@ -152,6 +172,7 @@ export default defineComponent({
 		return {
 			savStore,
 			savFileInput,
+			currentSavBuffer,
 			uploadNew,
 			onNewSavFile,
 		};
