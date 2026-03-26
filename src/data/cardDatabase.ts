@@ -64,6 +64,19 @@ export class CardDatabase {
       this._byNibbleIndex.set(card.nibbleIndex, card);
       this._cidByPasscode.set(card.passcode, cid);
     }
+
+    // 注册 Errata 修正版密码别名
+    // 部分卡片被官方修改效果后分配了新密码（通常 +1），
+    // Format Library 等外部数据源使用新密码，WC2009 使用旧密码
+    for (const [altPasscode, origPasscode] of ERRATA_PASSCODE_MAP) {
+      const card = this._byPasscode.get(origPasscode);
+      if (card) {
+        this._byPasscode.set(altPasscode, card);
+        const cid = this._cidByPasscode.get(origPasscode);
+        if (cid) this._cidByPasscode.set(altPasscode, cid);
+      }
+    }
+
     this._loaded = true;
   }
 
@@ -176,3 +189,28 @@ export async function loadCardDatabase(
   const data: CardDataMap = await response.json();
   cardDatabase.load(data);
 }
+
+// ============================================================
+// Errata 密码映射
+// ============================================================
+
+/**
+ * Errata 修正版密码 → 原始密码。
+ *
+ * 部分卡片被 Konami 官方修改效果后分配了新密码（通常在原密码基础上 +1）。
+ * Format Library 等外部数据源使用新密码，WC2009 使用旧密码。
+ * 在此注册别名后，用新密码也能查到 WC2009 中的卡片。
+ */
+const ERRATA_PASSCODE_MAP: [string, string][] = [
+  // [Format Library 密码, WC2009 密码]
+  // —— Errata 修正版（效果修改后新密码，通常 +1）
+  ["83555667", "83555666"],  // 破坏轮
+  ["81439174", "81439173"],  // 愚蠢的埋葬
+  ["23401840", "23401839"],  // 千手神
+  ["81172177", "81172176"],  // 恶魔喜剧演员
+  ["98502115", "98502113"],  // 超魔导剑士-黑魔导剑士
+  ["90330454", "90330453"],  // 魔女狩猎
+  // —— 异画版（alternate artwork，完全不同的密码）
+  ["78734254", "17955766"],  // 新空间侠·水波海豚
+  ["74335036", "24094653"],  // 融合
+];
