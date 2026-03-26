@@ -55,14 +55,6 @@
 						class="collection__card-img"
 						loading="lazy"
 					/>
-					<span
-						class="collection__card-count-badge"
-						:class="{
-							'collection__card-count-badge--zero': item.count === 0,
-						}"
-					>
-						x{{ item.count }}
-					</span>
 				</div>
 				<div class="collection__card-info">
 					<span class="collection__card-name" :title="item.card.name">

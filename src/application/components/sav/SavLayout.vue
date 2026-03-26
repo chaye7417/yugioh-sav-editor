@@ -57,7 +57,7 @@
 							:class="{ 'sav-layout__nav-item--active': savStore.activePanel === 'collection' }"
 							@click="savStore.setActivePanel('collection')"
 						>
-							卡片收藏
+							卡片背包
 						</button>
 						<button
 							class="sav-layout__nav-item"
