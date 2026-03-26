@@ -1,65 +1,82 @@
-# Yu-Gi-Oh! Deck-Tool
+# 游戏王 NDS 存档编辑器（可视化版本）
 
-> A tool to share and edit decks, view deck prices, and much more.
+基于 [yugioh-deck-tool](https://github.com/RillingDev/yugioh-deck-tool) 改造的 NDS 游戏王存档可视化编辑器，支持 WC2007/WC2008/WC2009 三个版本。
 
-## Introduction
+## 功能特性
 
-The live version can be found on [YGOPRODeck](https://ygoprodeck.com/deckbuilder/).
+- 解析和编辑 NDS 游戏王存档文件（.sav）
+- 自动检测存档版本（WC2007/WC2008/WC2009）
+- 可视化卡组编辑：拖拽排序、卡片搜索、过滤
+- 卡片收藏编辑、配方编辑
+- 支持导入/导出 YDK 卡组文件
+- 卡片悬浮预览（图片 + 详细信息）
+- CRC32 校验 + LZ10 压缩，确保存档完整性
 
-## Development
+## 在线访问
 
-### Setup
+- 网站：`http://81.70.28.90/yugioh/`（域名恢复后：`https://www.liujiaye.cn/yugioh/`）
 
-Prerequisites:
+## 开发
 
-- Git
-- Node.js
-- NPM
+### 环境要求
 
-Then perform the following steps:
+- Node.js 22+
+- npm
 
-1. Clone the repository.
-2. Execute `npm i` inside the cloned directory to install dependencies.
-3. Execute `npm run dev` inside the cloned directory to start the development server.
+### 安装与运行
 
-If you are ready to deploy the application, build it by executing `npm run build`.
+```bash
+git clone https://github.com/chaye7417/yugioh-sav-editor.git
+cd yugioh-sav-editor
+npm install --legacy-peer-deps
+npm run dev
+```
 
-##### Patches
+### 构建
 
-Some 3rd-party packages require additional patches (See `./patches/`).
+```bash
+npm run build
+```
 
-#### Build Output
+构建产物在 `dist/` 目录。
 
-The build output can be found in the `dist` directory. The `.map` files are optional and only used for debugging.
+### 卡片数据构建
 
-### Architecture
+```bash
+npm run build:cards           # WC2009（默认）
+npm run build:cards:wc2008    # WC2008
+npm run build:cards:wc2007    # WC2007
+```
 
-See [Architecture.md](./ARCHITECTURE.md).
+## 部署
 
-## API
+项目已配置 GitHub Actions 自动部署：
 
-### JavaScript
+1. 推送到 `master` 分支
+2. `trigger-deploy.yml` 触发网站仓库 [liujiaye.cn](https://github.com/chaye7417/liujiaye.cn) 的部署
+3. 网站仓库自动构建并通过 rsync 部署到服务器
 
-The tooltip and the application instances expose an API that can be interacted with via JavaScript.
-See `./src/tooltip/api.ts` and `./src/application/api.ts` for their documentation.
+Vite `base` 配置为 `/yugioh/`，部署在网站的 `/yugioh/` 子路径下。
 
-### URL Parameters
+## 技术栈
 
-When the application starts, it checks for the existence of the `y` URL query parameter. If it is present, it will be parsed as the data portion of a [YDKE](https://github.com/edo9300/edopro/issues/171) URI with an optional deck name at the end of it. The parsed data will then be loaded as the active deck.
+- Vue 2.7 + TypeScript + Vite 7
+- Pinia（状态管理）
+- Bootstrap Vue（UI 组件）
+- html2canvas（截图）
+- pako（数据压缩）
 
-## YGOPRODeck Exclusive Features
+## 架构
 
-The following features are only available when the tool is running on <https://ygoprodeck.com/>.
+- `src/core/sav/` — 存档解析、写入、CRC32、LZ10 压缩
+- `src/core/card/` — 卡片数据库、搜索、过滤、排序
+- `src/core/deck/` — 卡组管理、导入导出
+- `src/application/` — Vue 应用入口和组件
+- `src/data/` — 卡片数据加载
+- `src/tooltip/` — 卡片悬浮预览
 
-- Showing only cards in your collection
+## 许可证
 
-## Credits
+Apache 2.0（原项目），改造部分同协议。
 
-- Thanks to Alan from <https://ygoprodeck.com/> for providing the API for all card data, as well as supporting the development.
-- Thanks to the awesome people at <https://github.com/edo9300/edopro> for the great duel simulator that this application is inspired by.
-
-## License
-
-Please check the `LICENSE` file for details.
-
-Yu-Gi-Oh! is a trademark of Shueisha and Konami. This project is not affiliated with or endorsed by Shueisha or Konami.
+Yu-Gi-Oh! 是集英社和科乐美的商标。本项目与集英社和科乐美无关。
