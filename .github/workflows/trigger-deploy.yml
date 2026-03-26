@@ -1,0 +1,16 @@
+name: Trigger Website Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger liujiaye.cn deploy
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          repository: chaye7417/liujiaye.cn
+          event-type: yugioh-sav-editor-updated
