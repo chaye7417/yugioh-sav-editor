@@ -67,8 +67,14 @@
 
 		<!-- 卡组列表 -->
 		<div class="format-library__list-section">
+			<!-- 初始加载大文件 -->
+			<div v-if="dataLoading" class="format-library__loading">
+				<div class="format-library__spinner"></div>
+				<span>正在加载卡组数据 (56MB)...</span>
+			</div>
+
 			<!-- 加载中 -->
-			<div v-if="listLoading && decks.length === 0" class="format-library__loading">
+			<div v-else-if="listLoading && decks.length === 0" class="format-library__loading">
 				<div class="format-library__spinner"></div>
 				<span>加载中...</span>
 			</div>
@@ -286,11 +292,10 @@ import { computed, defineComponent, ref } from "vue";
 import { useSavStore } from "@/application/store/sav";
 import { cardDatabase } from "@/data/cardDatabase";
 import {
-	fetchFormats,
-	fetchDecks,
-	fetchDeckDetail,
+	loadFormats,
+	loadAllDecks,
+	filterAndPageDecks,
 	type FormatInfo,
-	type DeckSummary,
 	type DeckDetail,
 	type DeckSort,
 	type DeckFilter,
@@ -311,6 +316,10 @@ export default defineComponent({
 	setup() {
 		const savStore = useSavStore();
 
+		// 数据加载状态
+		const dataLoading = ref(true);
+		const allDecks = ref<DeckDetail[]>([]);
+
 		// 筛选状态
 		const formats = ref<FormatInfo[]>([]);
 		const selectedFormat = ref("");
@@ -320,8 +329,9 @@ export default defineComponent({
 		const onlyCompatible = ref(false);
 
 		// 列表状态
-		const decks = ref<DeckSummary[]>([]);
+		const decks = ref<DeckDetail[]>([]);
 		const currentPage = ref(1);
+		const totalCount = ref(0);
 		const hasMore = ref(true);
 		const listLoading = ref(false);
 		const listError = ref<string | null>(null);
@@ -334,9 +344,6 @@ export default defineComponent({
 
 		// 兼容度缓存 (deckId → CompatResult)，用普通对象代替 Map（Vue 2 模板不支持 Map）
 		const compatCache = ref<Record<number, CompatResult>>({});
-
-		// 防抖定时器
-		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 		/** 当前卡组详情的兼容度 */
 		const currentCompat = computed<CompatResult | null>(() => {
@@ -376,11 +383,11 @@ export default defineComponent({
 		}
 
 		/**
-		 * 加载卡组列表。
+		 * 从内存中的 allDecks 筛选并加载卡组列表。
 		 *
 		 * @param reset - 是否重置列表（筛选条件变化时）
 		 */
-		async function loadDecks(reset: boolean): Promise<void> {
+		function loadDecks(reset: boolean): void {
 			if (reset) {
 				currentPage.value = 1;
 				decks.value = [];
@@ -389,45 +396,47 @@ export default defineComponent({
 				currentDetail.value = null;
 			}
 
+			if (allDecks.value.length === 0) return;
+
 			listLoading.value = true;
 			listError.value = null;
 
 			try {
-				const result = await fetchDecks(
+				const { items, total } = filterAndPageDecks(
+					allDecks.value,
 					buildFilter(),
 					parseSort(),
-					PAGE_SIZE,
-					currentPage.value
+					currentPage.value,
+					PAGE_SIZE
 				);
-					if (reset) {
-					decks.value = result;
+				totalCount.value = total;
+
+				if (reset) {
+					decks.value = items;
 				} else {
-					decks.value = [...decks.value, ...result];
+					decks.value = [...decks.value, ...items];
 				}
-				hasMore.value = result.length >= PAGE_SIZE;
+				hasMore.value = decks.value.length < total;
 			} catch (e) {
-				listError.value = e instanceof Error ? e.message : "加载失败";
+				listError.value = e instanceof Error ? e.message : "筛选失败";
 			} finally {
 				listLoading.value = false;
 			}
 		}
 
 		/** 加载更多（下一页） */
-		async function loadMore(): Promise<void> {
+		function loadMore(): void {
 			currentPage.value++;
-			await loadDecks(false);
+			loadDecks(false);
 		}
 
-		/** 筛选条件变化时（防抖 300ms） */
+		/** 筛选条件变化时（前端即时筛选，无需防抖） */
 		function onFilterChange(): void {
-			if (debounceTimer) clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => {
-				loadDecks(true);
-			}, 300);
+			loadDecks(true);
 		}
 
-		/** 选中某个卡组 */
-		async function selectDeck(deckId: number): Promise<void> {
+		/** 选中某个卡组（从内存直接获取详情） */
+		function selectDeck(deckId: number): void {
 			if (selectedDeckId.value === deckId) {
 				// 再次点击取消选中
 				selectedDeckId.value = null;
@@ -436,15 +445,21 @@ export default defineComponent({
 			}
 
 			selectedDeckId.value = deckId;
-			currentDetail.value = null;
-			detailLoading.value = true;
+			detailLoading.value = false;
 			detailError.value = null;
 
-			try {
-				const detail = await fetchDeckDetail(deckId);
-				currentDetail.value = detail;
+			// 从内存中查找详情
+			const detail = allDecks.value.find((d) => d.id === deckId);
+			if (!detail) {
+				detailError.value = "未找到卡组详情";
+				currentDetail.value = null;
+				return;
+			}
 
-				// 计算兼容度并缓存
+			currentDetail.value = detail;
+
+			// 计算兼容度并缓存
+			if (!compatCache.value[deckId]) {
 				const allCards = [
 					...detail.main,
 					...detail.extra,
@@ -452,10 +467,6 @@ export default defineComponent({
 				];
 				const compat = checkWc2009Compat(allCards);
 				compatCache.value = { ...compatCache.value, [deckId]: compat };
-			} catch (e) {
-				detailError.value = e instanceof Error ? e.message : "加载详情失败";
-			} finally {
-				detailLoading.value = false;
 			}
 		}
 
@@ -592,23 +603,31 @@ export default defineComponent({
 			}
 		}
 
-		// 初始化：加载赛制列表 + 默认卡组列表
-		// 使用 .then() 而非 onMounted + async/await，避免 Vue 2.7 Composition API 的异步边界问题
-		fetchFormats()
-			.then((fmts) => {
+		// 初始化：并行加载赛制列表和全量卡组数据
+		dataLoading.value = true;
+
+		Promise.all([
+			loadFormats().then((fmts) => {
 				formats.value = fmts;
-			})
-			.catch(() => {
+			}).catch(() => {
 				// 赛制列表加载失败不阻塞页面
+			}),
+			loadAllDecks().then((all) => {
+				allDecks.value = all;
+			}),
+		])
+			.then(() => {
+				dataLoading.value = false;
+				loadDecks(true);
+			})
+			.catch((e) => {
+				dataLoading.value = false;
+				listError.value = e instanceof Error ? e.message : "加载数据失败";
 			});
-
-		loadDecks(true);
-
-		// 监听 onlyCompatible 变化（纯前端过滤，无需重新请求）
-		// filteredDecks 是 computed，会自动响应
 
 		return {
 			savStore,
+			dataLoading,
 			formats,
 			selectedFormat,
 			selectedOrigin,
