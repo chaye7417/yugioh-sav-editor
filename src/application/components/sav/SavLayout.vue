@@ -253,7 +253,7 @@ export default defineComponent({
 
 	&__content {
 		flex: 1;
-		overflow: hidden;
+		overflow: auto;
 		background: #fff;
 		display: flex;
 		flex-direction: column;
