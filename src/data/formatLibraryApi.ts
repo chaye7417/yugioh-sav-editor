@@ -120,7 +120,13 @@ export function filterAndSort(
 ): SlimDeck[] {
 	let result = decks;
 	if (filter.formatName) result = result.filter((d) => d.f === filter.formatName);
-	if (filter.origin) result = result.filter((d) => (d.o ?? "unknown") === filter.origin);
+	if (filter.origin) {
+		// o 字段在数据中缺失，用 e (eventAbbreviation) 推断：有比赛缩写 → event，否则 → user
+		result = result.filter((d) => {
+			const origin = d.o ?? (d.e ? "event" : "user");
+			return origin === filter.origin;
+		});
+	}
 	if (filter.placementMax && filter.placementMax > 0) {
 		result = result.filter(
 			(d) => d.p != null && d.p >= 1 && d.p <= filter.placementMax!,
