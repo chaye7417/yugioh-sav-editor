@@ -116,14 +116,7 @@
 						</div>
 					</div>
 
-					<div v-if="hasMore" class="format-library__load-more">
-						<button
-							class="btn btn-sm btn-outline-primary"
-							@click="loadMore"
-						>
-							加载更多
-						</button>
-					</div>
+					<div v-if="hasMore" ref="sentinel" class="format-library__sentinel"></div>
 				</div>
 			</div>
 		</div>
@@ -357,6 +350,13 @@ export default defineComponent({
 			this.errorMsg = "mounted() 错误: " + (e?.message || e);
 			console.error("[FormatLibrary] mounted() error:", e);
 		}
+		this.setupObserver();
+	},
+
+	beforeDestroy() {
+		if ((this as any)._observer) {
+			(this as any)._observer.disconnect();
+		}
 	},
 
 	methods: {
@@ -387,6 +387,7 @@ export default defineComponent({
 				this.currentDetail = null;
 				this.errorMsg = "";
 				this.showPage(true);
+				this.$nextTick(() => this.observeSentinel());
 			} catch (e) {
 				this.errorMsg = e instanceof Error ? e.message : "筛选失败";
 			}
@@ -417,6 +418,29 @@ export default defineComponent({
 
 		loadMore(): void {
 			this.showPage(false);
+			this.$nextTick(() => this.observeSentinel());
+		},
+
+		/** 创建 IntersectionObserver */
+		setupObserver(): void {
+			(this as any)._observer = new IntersectionObserver(
+				(entries) => {
+					if (entries[0]?.isIntersecting && this.hasMore) {
+						this.loadMore();
+					}
+				},
+				{ root: null, rootMargin: "100px", threshold: 0 },
+			);
+			this.$nextTick(() => this.observeSentinel());
+		},
+
+		/** 让 observer 观察当前哨兵元素 */
+		observeSentinel(): void {
+			const obs = (this as any)._observer as IntersectionObserver | undefined;
+			if (!obs) return;
+			obs.disconnect();
+			const el = this.$refs.sentinel as HTMLElement | undefined;
+			if (el) obs.observe(el);
 		},
 
 		selectDeck(deckId: number): void {
@@ -701,9 +725,8 @@ export default defineComponent({
 		&--partial { color: #e67e22; }
 	}
 
-	&__load-more {
-		text-align: center;
-		padding: 0.4rem;
+	&__sentinel {
+		height: 1px;
 	}
 
 	// ============================
