@@ -76,7 +76,9 @@
 					</nav>
 
 					<!-- 当选中预制卡组时，显示卡组列表 -->
-					<RecipeList v-if="savStore.activePanel === 'recipe'" />
+					<div class="sav-layout__recipe-sidebar">
+						<RecipeList v-if="savStore.activePanel === 'recipe'" />
+					</div>
 				</aside>
 
 				<!-- 主内容区 -->
@@ -92,7 +94,9 @@
 				</main>
 
 				<!-- 卡片详情面板（常驻） -->
-				<CardInfoPanel />
+				<div class="sav-layout__card-panel">
+					<CardInfoPanel />
+				</div>
 			</div>
 
 			<input
@@ -261,6 +265,66 @@ export default defineComponent({
 
 	&__hidden-input {
 		display: none;
+	}
+}
+
+/* 移动端响应式适配 */
+@media (max-width: 768px) {
+	.sav-layout {
+		&__brand {
+			font-size: 0.9rem;
+		}
+
+		&__topbar-actions {
+			gap: 0.3rem;
+
+			.btn {
+				font-size: 0.75rem;
+				padding: 0.2rem 0.5rem;
+			}
+		}
+
+		&__main {
+			flex-direction: column;
+		}
+
+		&__sidebar {
+			width: 100%;
+			flex-direction: row;
+			border-right: none;
+			border-bottom: 1px solid #e0e0e0;
+			overflow-x: auto;
+			overflow-y: hidden;
+			flex-shrink: 0;
+		}
+
+		&__nav {
+			flex-direction: row;
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			gap: 4px;
+			padding: 0.4rem;
+		}
+
+		&__nav-item {
+			white-space: nowrap;
+			padding: 0.4rem 0.6rem;
+			font-size: 0.8rem;
+			width: auto;
+		}
+
+		&__recipe-sidebar {
+			display: none;
+		}
+
+		&__content {
+			flex: 1;
+			overflow: auto;
+		}
+
+		&__card-panel {
+			display: none;
+		}
 	}
 }
 </style>

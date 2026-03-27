@@ -870,4 +870,48 @@ export default defineComponent({
 .sortable-ghost {
 	opacity: 0.5;
 }
+
+@media (max-width: 768px) {
+	.recipe-editor {
+		&__header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.5rem;
+		}
+
+		&__name-input {
+			width: 150px;
+		}
+
+		&__body {
+			flex-direction: column;
+			overflow: auto;
+		}
+
+		&__search-panel {
+			width: 100%;
+			max-height: 40vh;
+		}
+
+		&__search-results {
+			max-height: 30vh;
+		}
+
+		&__card-img {
+			&--small {
+				width: 50px;
+				height: 73px;
+			}
+
+			&--medium {
+				width: 60px;
+				height: 87px;
+			}
+		}
+
+		&__deck-panel {
+			overflow-y: visible;
+		}
+	}
+}
 </style>

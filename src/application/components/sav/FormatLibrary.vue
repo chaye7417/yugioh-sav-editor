@@ -1086,4 +1086,53 @@ export default defineComponent({
 		font-size: 0.85rem;
 	}
 }
+
+// ============================
+// 移动端响应式适配
+// ============================
+@media (max-width: 768px) {
+	.format-library {
+		flex-direction: column;
+
+		&__left {
+			width: 100%;
+			min-width: unset;
+			border-right: none;
+			border-bottom: 1px solid #e0e0e0;
+			max-height: 40vh;
+		}
+
+		&__right {
+			flex: 1;
+			overflow-y: auto;
+		}
+
+		&__filter-row {
+			select {
+				font-size: 0.7rem;
+			}
+
+			input[type="text"] {
+				font-size: 0.8rem;
+			}
+		}
+
+		&__card-img {
+			width: 44px;
+			height: 64px;
+		}
+
+		&__import-actions {
+			flex-wrap: wrap;
+		}
+
+		&__slot-select {
+			width: 140px;
+		}
+
+		&__batch-bar {
+			flex-wrap: wrap;
+		}
+	}
+}
 </style>

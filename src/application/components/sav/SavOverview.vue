@@ -345,4 +345,20 @@ export default defineComponent({
 		font-size: 0.85rem;
 	}
 }
+
+@media (max-width: 768px) {
+	.sav-overview {
+		max-width: 100%;
+		padding: 1rem;
+
+		&__actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		&__download-btn {
+			width: 100%;
+		}
+	}
+}
 </style>

@@ -425,4 +425,37 @@ export default defineComponent({
 		flex-shrink: 0;
 	}
 }
+
+@media (max-width: 768px) {
+	.collection {
+		&__header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.25rem;
+		}
+
+		&__toolbar {
+			flex-wrap: wrap;
+		}
+
+		&__search {
+			min-width: 100%;
+			order: -1;
+		}
+
+		&__filter {
+			width: auto;
+			flex: 1;
+			min-width: 80px;
+		}
+
+		&__card {
+			width: 90px;
+		}
+
+		&__card-img {
+			width: 100%;
+		}
+	}
+}
 </style>

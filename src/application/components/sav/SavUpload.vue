@@ -245,4 +245,24 @@ export default defineComponent({
 		display: none;
 	}
 }
+
+@media (max-width: 768px) {
+	.sav-upload {
+		min-height: auto;
+		padding-top: 2rem;
+
+		&__title {
+			font-size: 1.3rem;
+		}
+
+		&__dropzone {
+			padding: 2rem 1rem;
+		}
+
+		&__icon {
+			width: 36px;
+			height: 36px;
+		}
+	}
+}
 </style>

@@ -236,4 +236,16 @@ export default defineComponent({
 		display: none;
 	}
 }
+
+@media (max-width: 768px) {
+	.recipe-list {
+		&__slots {
+			max-height: calc(100vh - 220px);
+		}
+
+		&__slot {
+			padding: 0.4rem 0.5rem;
+		}
+	}
+}
 </style>
